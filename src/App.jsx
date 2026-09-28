@@ -353,16 +353,17 @@ export default function App() {
           </div>
         )}
 
-        {/* Alt Bilgi - Sıfırlama butonu kaldırıldı, sadece temiz bilgi kaldı */}
-        <div className="mt-12 pt-6 border-t border-gray-800/80 flex items-center justify-between text-xs text-gray-500 no-print">
+        {/* Alt Bilgi & Profesyonel İmza */}
+        <footer className="mt-12 pt-6 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2 no-print">
           <div className="flex items-center space-x-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span>Uşak Yarış Pisti • 10 Paddock Box & Pist Giriş Bakiye Sistemi</span>
+            <span>Uşak Yarış Pisti • 10 Paddock Box Garaj & Bakiye Sistemi</span>
           </div>
-          <div className="text-gray-600 font-mono text-[11px]">
-            Yetkili: {currentUser.name || currentUser.username}
+
+          <div className="text-center sm:text-right text-[11px] text-gray-400">
+            © {new Date().getFullYear()} Uşak Yarış Pisti • Designed & Developed by <span className="text-red-500 font-bold">Eray Yörük</span>
           </div>
-        </div>
+        </footer>
 
       </main>
 

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Warehouse, Lock, User, KeyRound, AlertCircle, ArrowRight } from 'lucide-react';
+import { Warehouse, Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
 
 export default function LoginScreen({ onLogin, admins }) {
-  const [username, setUsername] = useState('admin');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+
+  const currentYear = new Date().getFullYear();
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -22,8 +24,13 @@ export default function LoginScreen({ onLogin, admins }) {
   };
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] flex items-center justify-center p-4 carbon-pattern">
-      <div className="w-full max-w-md bg-[#151922] border-2 border-gray-700 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6">
+    <div className="min-h-screen bg-[#0B0F17] flex flex-col justify-between p-4 carbon-pattern">
+      
+      {/* Üst boşluk dengeleyici */}
+      <div className="hidden sm:block"></div>
+
+      {/* Giriş Kartı */}
+      <div className="w-full max-w-md mx-auto bg-[#151922] border-2 border-gray-700 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6 my-auto">
         
         {/* Logo ve Başlık */}
         <div className="text-center space-y-2">
@@ -35,7 +42,7 @@ export default function LoginScreen({ onLogin, admins }) {
             UŞAK PİSTİ GARAJ
           </h1>
           <p className="text-xs sm:text-sm text-gray-400 font-bold">
-            Yetkili Giriş Paneli (Paddock Box Yönetimi)
+            Paddock Box Yönetim & Giriş Sistemi
           </p>
         </div>
 
@@ -61,6 +68,7 @@ export default function LoginScreen({ onLogin, admins }) {
               placeholder="Kullanıcı adınızı girin"
               className="w-full bg-black border-2 border-gray-700 rounded-2xl px-4 py-3 text-base text-white font-bold focus:outline-none focus:border-red-500"
               required
+              autoFocus
             />
           </div>
 
@@ -90,14 +98,18 @@ export default function LoginScreen({ onLogin, admins }) {
           </div>
         </form>
 
-        {/* Varsayılan Giriş İpucu (Kullanıcının ilk girişi için kolaylık) */}
-        <div className="pt-4 border-t border-gray-800 text-center">
-          <p className="text-xs text-gray-500 font-semibold">
-            Varsayılan Giriş: Kullanıcı Adı: <span className="text-white font-bold">admin</span> • Şifre: <span className="text-white font-bold">123</span>
-          </p>
-        </div>
-
       </div>
+
+      {/* Profesyonel İmza & Yıl Bilgisi */}
+      <footer className="text-center py-4 text-xs text-gray-500 font-medium tracking-wide">
+        <div>
+          © {currentYear} <span className="text-gray-300 font-bold">Uşak Yarış Pisti</span> • Tüm Hakları Saklıdır.
+        </div>
+        <div className="mt-1 text-[11px] text-gray-400">
+          Designed & Developed by <span className="text-red-500 font-bold">Eray Yörük</span>
+        </div>
+      </footer>
+
     </div>
   );
 }
