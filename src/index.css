@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-main: #0B0E14;
+    --bg-card: #151922;
+  }
+
+  body {
+    background-color: #0b0f17;
+    color: #e2e8f0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Carbon fiber grid pattern */
+.carbon-pattern {
+  background-color: #0d111a;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                    radial-gradient(rgba(255, 255, 255, 0.03) 1px, #0b0f17 1px);
+  background-size: 20px 20px;
+  background-position: 0 0, 10px 10px;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #0d111a;
+}
+::-webkit-scrollbar-thumb {
+  background: #242c3d;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3b465d;
+}
+
+/* KAREKOD YAZDIRMA (PRINT) ÖZEL STİLLERİ - ÇIKTIDA SADECE ETİKETLER ÇIKAR */
+@media print {
+  /* Navbar, butonlar, menüler ve kontrol panelleri tamamen gizlenir */
+  header, 
+  nav, 
+  footer, 
+  button, 
+  .no-print,
+  input,
+  select {
+    display: none !important;
+  }
+
+  body, html, #root, main {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
+
+  .qr-sticker-sheet {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 20px !important;
+    padding: 10px !important;
+    margin: 0 !important;
+    width: 100% !important;
+  }
+
+  .qr-sticker {
+    border: 2px dashed #000000 !important;
+    page-break-inside: avoid !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    box-shadow: none !important;
+    border-radius: 12px !important;
+    padding: 12px !important;
+  }
+}

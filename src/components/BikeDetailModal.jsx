@@ -1,0 +1,528 @@
+import React, { useState } from 'react';
+import { 
+  X, 
+  User, 
+  Phone, 
+  Wrench, 
+  Plus, 
+  Trash2, 
+  CheckCircle2, 
+  AlertTriangle, 
+  QrCode, 
+  Printer, 
+  Camera, 
+  MessageCircle, 
+  Tag, 
+  Heart,
+  Play,
+  History,
+  ShieldAlert,
+  Bike
+} from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
+import confetti from 'canvas-confetti';
+
+export default function BikeDetailModal({ bike, onClose, onUpdateBike, onOpenPrint }) {
+  if (!bike) return null;
+
+  const [activeTab, setActiveTab] = useState('parts'); // 'parts', 'entries', 'owner', 'qr'
+  const [newPartName, setNewPartName] = useState('');
+  const [showAddPart, setShowAddPart] = useState(false);
+
+  const remaining = bike.remainingEntries ?? 0;
+  const isExpired = remaining <= 0;
+
+  // Fotoğraf değiştirme
+  const handlePhotoUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        onUpdateBike({ ...bike, photoUrl: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Yeni parça ekleme
+  const handleAddPart = (e) => {
+    e.preventDefault();
+    if (!newPartName.trim()) return;
+
+    const newPart = {
+      id: 'part_' + Date.now(),
+      name: newPartName.trim(),
+      installedAt: new Date().toISOString().split('T')[0]
+    };
+
+    onUpdateBike({
+      ...bike,
+      equippedParts: [...(bike.equippedParts || []), newPart]
+    });
+    setNewPartName('');
+    setShowAddPart(false);
+  };
+
+  // Parça silme
+  const handleRemovePart = (partId) => {
+    onUpdateBike({
+      ...bike,
+      equippedParts: bike.equippedParts.filter(p => p.id !== partId)
+    });
+  };
+
+  // Piste Giriş Yap (-1 Hak Düş)
+  const handleUseEntry = () => {
+    if (remaining <= 0) {
+      alert(`Sayın ${bike.owner?.fullName} için pist giriş hakkı kalmamıştır!`);
+      return;
+    }
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    const newHistory = [
+      { date: dateStr, note: "Piste giriş yapıldı" },
+      ...(bike.entryHistory || [])
+    ];
+
+    onUpdateBike({
+      ...bike,
+      remainingEntries: remaining - 1,
+      entryHistory: newHistory
+    });
+
+    alert(`🏎️ Piste giriş onaylandı. Kalan Pist Giriş Hakkı: ${remaining - 1}`);
+  };
+
+  // Yeni Paket / Hak Yükle (+5 Giriş Hakkı)
+  const handleAddEntries = () => {
+    const count = prompt(`${bike.owner?.fullName} için kaç pist giriş hakkı tanımlansın?`, '5');
+    if (!count || isNaN(count)) return;
+
+    confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
+
+    const added = parseInt(count, 10);
+    onUpdateBike({
+      ...bike,
+      remainingEntries: remaining + added,
+      totalEntriesGranted: (bike.totalEntriesGranted ?? 0) + added
+    });
+  };
+
+  // WhatsApp hatırlatması
+  const handleSendWhatsApp = () => {
+    const phone = bike.owner?.phone?.replace(/[^0-9]/g, '');
+    const text = encodeURIComponent(
+      `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni giriş paketi tanımlamak için bizimle iletişime geçebilirsiniz. İyi günler dileriz. - Uşak Paddock Yönetimi`
+    );
+    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-[#151922] border-2 border-gray-700 rounded-3xl shadow-2xl overflow-hidden my-6">
+        
+        {/* Üst Fotoğraf ve Başlık */}
+        <div className="relative h-60 w-full bg-gray-900">
+          <img 
+            src={bike.photoUrl} 
+            alt={bike.model}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.src = "https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=800&q=80";
+            }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#151922] via-[#151922]/50 to-black/40"></div>
+
+          {/* Kapat Butonu */}
+          <button 
+            onClick={onClose}
+            className="absolute top-4 right-4 p-3 rounded-full bg-black/70 text-white hover:bg-black transition border border-white/20"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          {/* Fotoğraf Değiştir */}
+          <label className="absolute top-4 left-4 cursor-pointer flex items-center space-x-2 px-4 py-2 rounded-xl bg-black/70 hover:bg-black text-white text-xs font-bold backdrop-blur-md border border-white/20 transition">
+            <Camera className="w-4 h-4 text-cyan-400" />
+            <span>Fotoğraf Değiştir</span>
+            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+          </label>
+
+          {/* Başlık, Yarış No ve Giriş Durumu */}
+          <div className="absolute bottom-4 left-4 right-4 flex items-end justify-between">
+            <div>
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="px-3 py-1 rounded-xl bg-red-600 text-white font-black text-lg italic shadow">
+                  #{bike.raceNumber}
+                </span>
+                <span className="px-2.5 py-1 rounded-xl bg-black/80 text-white font-bold text-xs border border-white/10">
+                  {bike.garageNo}
+                </span>
+              </div>
+              <h2 className="text-2xl sm:text-3xl font-black text-white">
+                {bike.brand} {bike.model}
+              </h2>
+              {bike.chassisNumber && (
+                <div className="text-xs text-gray-300 font-mono">
+                  Şasi No: {bike.chassisNumber}
+                </div>
+              )}
+            </div>
+
+            {/* Kalan Giriş Rozeti */}
+            <div>
+              {isExpired ? (
+                <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-black text-xs shadow-lg animate-pulse flex items-center">
+                  <AlertTriangle className="w-4 h-4 mr-1" /> Hak Bitti! (0)
+                </span>
+              ) : (
+                <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow flex items-center">
+                  <CheckCircle2 className="w-4 h-4 mr-1" /> {remaining} Giriş Hakkı
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* 4 ANA BÜYÜK SEKME BUTONU */}
+        <div className="grid grid-cols-4 border-b-2 border-gray-700 bg-gray-900 text-center">
+          <button
+            onClick={() => setActiveTab('parts')}
+            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+              activeTab === 'parts' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Wrench className="w-4 h-4" />
+            <span>Parçalar</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('entries')}
+            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+              activeTab === 'entries' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <Play className="w-4 h-4" />
+            <span>Pist Girişi ({remaining})</span>
+          </button>
+
+          {/* Sürücü & Araç Bilgileri */}
+          <button
+            onClick={() => setActiveTab('owner')}
+            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+              activeTab === 'owner' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <User className="w-4 h-4" />
+            <span>Sahibi & Araç</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('qr')}
+            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+              activeTab === 'qr' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>Karekod</span>
+          </button>
+        </div>
+
+        {/* SEKME İÇERİKLERİ */}
+        <div className="p-4 sm:p-6 max-h-[50vh] overflow-y-auto">
+          
+          {/* 1. SEKME: TAKILI PARÇALAR */}
+          {activeTab === 'parts' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-black text-white uppercase">
+                  Motora Takılan Parçalar ({bike.equippedParts?.length || 0}):
+                </span>
+
+                <button
+                  onClick={() => setShowAddPart(!showAddPart)}
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black flex items-center space-x-1 shadow"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Yeni Parça Ekle</span>
+                </button>
+              </div>
+
+              {showAddPart && (
+                <form onSubmit={handleAddPart} className="p-3 bg-gray-900 border-2 border-cyan-500 rounded-2xl space-y-3">
+                  <div className="text-xs font-bold text-cyan-400">Takılan Donanım Adı:</div>
+                  <input 
+                    type="text" 
+                    placeholder="örn: Capit Lastik Isıtıcı, AIM Solo 2 Laptimer, Koruma Demiri..."
+                    value={newPartName}
+                    onChange={(e) => setNewPartName(e.target.value)}
+                    className="w-full p-3 bg-black border border-gray-700 rounded-xl text-sm text-white font-bold"
+                    required
+                  />
+                  <div className="flex justify-end space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddPart(false)}
+                      className="px-4 py-2 text-xs font-bold text-gray-400"
+                    >
+                      İptal
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-5 py-2 rounded-xl bg-cyan-500 text-black font-black text-xs"
+                    >
+                      Kaydet
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              <div className="space-y-2">
+                {(bike.equippedParts || []).map((part) => (
+                  <div 
+                    key={part.id}
+                    className="p-3.5 rounded-2xl bg-gray-900 border border-gray-800 flex items-center justify-between"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="p-2 rounded-xl bg-gray-800 text-cyan-400">
+                        <Tag className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="text-sm font-black text-white">{part.name}</div>
+                        <div className="text-xs text-gray-400">Montaj: {part.installedAt}</div>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => handleRemovePart(part.id)}
+                      className="p-2 text-gray-500 hover:text-red-400 transition"
+                      title="Parçayı Sil"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  </div>
+                ))}
+
+                {(!bike.equippedParts || bike.equippedParts.length === 0) && (
+                  <div className="text-center py-8 text-gray-500 text-sm">
+                    Bu motora henüz takılı parça kaydedilmemiş.
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* 2. SEKME: PİST GİRİŞ BAKİYESİ VE LOGLARI */}
+          {activeTab === 'entries' && (
+            <div className="space-y-4">
+              <div className="p-4 rounded-3xl bg-gray-900 border-2 border-gray-800 text-center space-y-3">
+                <div className="text-xs text-gray-400 font-bold uppercase">
+                  Mevcut Pist Giriş Bakiyesi
+                </div>
+                <div className="text-4xl font-black text-white">
+                  <span className={isExpired ? 'text-red-500' : 'text-emerald-400'}>
+                    {remaining}
+                  </span>
+                  <span className="text-gray-500 text-xl font-bold"> / {bike.totalEntriesGranted || 5} Giriş</span>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button
+                    onClick={handleUseEntry}
+                    disabled={isExpired}
+                    className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg transition ${
+                      isExpired 
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
+                    }`}
+                  >
+                    <Play className="w-5 h-5 fill-current" />
+                    <span>Piste Giriş Yap (-1 Hak Düş)</span>
+                  </button>
+
+                  <button
+                    onClick={handleAddEntries}
+                    className="py-3.5 px-5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm flex items-center justify-center space-x-2 shadow"
+                  >
+                    <Plus className="w-5 h-5" />
+                    <span>+ Hak Yükle</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Giriş Geçmişi */}
+              <div className="space-y-2">
+                <div className="text-xs text-gray-400 font-bold uppercase flex items-center">
+                  <History className="w-4 h-4 mr-1 text-cyan-400" />
+                  Piste Giriş Geçmişi:
+                </div>
+
+                <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  {(bike.entryHistory || []).map((entry, idx) => (
+                    <div 
+                      key={idx}
+                      className="p-2.5 rounded-xl bg-black/50 border border-gray-800 flex items-center justify-between text-xs"
+                    >
+                      <span className="font-mono text-gray-300">📅 {entry.date}</span>
+                      <span className="text-emerald-400 font-semibold">{entry.note}</span>
+                    </div>
+                  ))}
+                  {(!bike.entryHistory || bike.entryHistory.length === 0) && (
+                    <div className="text-xs text-gray-500 text-center py-3">
+                      Henüz bu paketten piste giriş yapılmamış.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 3. SEKME: SÜRÜCÜ & ARACIN MARKA, MODEL, ŞASİ BİLGİLERİ */}
+          {activeTab === 'owner' && (
+            <div className="space-y-4">
+              
+              {/* ARAÇ BİLGİLERİ KUTUSU (MARKA, MODEL, ŞASİ VB.) */}
+              <div className="p-4 rounded-3xl bg-black/60 border-2 border-cyan-800/50 space-y-3">
+                <div className="text-xs font-black text-cyan-400 uppercase tracking-wider flex items-center">
+                  <Bike className="w-4 h-4 mr-1.5" />
+                  Araç & Ruhsat Bilgileri
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                    <span className="text-gray-400 block text-[10px] font-bold uppercase">Marka & Model</span>
+                    <span className="text-white font-black text-sm">{bike.brand} {bike.model}</span>
+                  </div>
+
+                  <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                    <span className="text-gray-400 block text-[10px] font-bold uppercase">Yarış Numarası & Garaj</span>
+                    <span className="text-amber-400 font-black text-sm">#{bike.raceNumber} • {bike.garageNo}</span>
+                  </div>
+
+                  <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800 col-span-2">
+                    <span className="text-gray-400 block text-[10px] font-bold uppercase">Motor Şasi Numarası (VIN)</span>
+                    <span className="text-white font-mono font-bold text-sm tracking-wider">
+                      {bike.chassisNumber || "Şasi numarası girilmemiş"}
+                    </span>
+                  </div>
+
+                  <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                    <span className="text-gray-400 block text-[10px] font-bold uppercase">Motor Hacmi / Yıl</span>
+                    <span className="text-gray-200 font-semibold">{bike.engineSize || "-"} • {bike.year}</span>
+                  </div>
+
+                  <div className="p-2.5 bg-gray-900/80 rounded-xl border border-gray-800">
+                    <span className="text-gray-400 block text-[10px] font-bold uppercase">Renk / Tasarım</span>
+                    <span className="text-gray-200 font-semibold">{bike.color || "-"}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* SÜRÜCÜ BİLGİLERİ */}
+              <div className="p-4 rounded-3xl bg-gray-900 border-2 border-gray-800 space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 font-bold uppercase">Sürücü / Pilot</span>
+                  {/* Kan Grubu Rozeti */}
+                  <span className="px-3 py-1 rounded-xl bg-red-950 border-2 border-red-600 text-red-400 font-black text-sm flex items-center">
+                    <Heart className="w-4 h-4 mr-1.5 fill-red-500 text-red-500" />
+                    {bike.owner?.bloodType || "Kan Grubu Yok"}
+                  </span>
+                </div>
+
+                <div className="text-2xl font-black text-white">{bike.owner?.fullName}</div>
+                
+                <div className="text-base font-bold text-emerald-400 flex items-center font-mono">
+                  <Phone className="w-4 h-4 mr-2" />
+                  {bike.owner?.phone}
+                </div>
+
+                <div className="pt-3 border-t border-gray-800 flex gap-2">
+                  <button
+                    onClick={handleSendWhatsApp}
+                    className="flex-1 py-3 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-sm flex items-center justify-center space-x-2 shadow"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span>WhatsApp Mesajı</span>
+                  </button>
+                  <a
+                    href={`tel:${bike.owner?.phone}`}
+                    className="py-3 px-6 rounded-2xl bg-gray-800 hover:bg-gray-700 text-white font-black text-sm flex items-center justify-center space-x-2 border border-gray-700"
+                  >
+                    <Phone className="w-5 h-5 text-emerald-400" />
+                    <span>Ara</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Acil Durum Yakını */}
+              {bike.owner?.emergencyPhone && (
+                <div className="p-4 rounded-3xl bg-red-950/20 border-2 border-red-900/40 space-y-1">
+                  <div className="text-xs text-red-400 font-bold flex items-center">
+                    <ShieldAlert className="w-4 h-4 mr-1.5" />
+                    Acil Durumda Aranacak Yakını ({bike.owner?.emergencyRelation || 'Yakını'}):
+                  </div>
+                  <div className="text-base font-black text-white">{bike.owner?.emergencyName}</div>
+                  <div className="text-sm font-mono font-bold text-red-400">{bike.owner?.emergencyPhone}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 4. SEKME: KAREKOD */}
+          {activeTab === 'qr' && (
+            <div className="text-center space-y-4">
+              <div className="p-4 bg-white rounded-3xl max-w-xs mx-auto border-4 border-red-600">
+                <div className="text-xs font-black text-black uppercase mb-1">
+                  UŞAK PİSTİ • {bike.garageNo}
+                </div>
+                <div className="text-base font-black text-red-600 mb-2">
+                  #{bike.raceNumber} - {bike.brand} {bike.model}
+                </div>
+                <div className="flex justify-center p-2">
+                  <QRCodeSVG 
+                    value={`USAK_TRACK_BIKE:${bike.id}`}
+                    size={160}
+                    level="H"
+                  />
+                </div>
+                <div className="text-xs font-bold text-black mt-1">
+                  {bike.owner?.fullName} • 🩸 {bike.owner?.bloodType}
+                </div>
+                {bike.chassisNumber && (
+                  <div className="text-[10px] font-mono text-gray-700 mt-0.5">
+                    Şasi: {bike.chassisNumber}
+                  </div>
+                )}
+              </div>
+
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenPrint(bike);
+                }}
+                className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-sm flex items-center justify-center space-x-2 mx-auto shadow-lg"
+              >
+                <Printer className="w-5 h-5" />
+                <span>Yazıcıdan Sticker Bas</span>
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        {/* Modal Kapat */}
+        <div className="p-4 bg-gray-900 border-t-2 border-gray-700 flex justify-end">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-sm"
+          >
+            Kapat
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
