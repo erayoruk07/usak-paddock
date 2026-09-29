@@ -146,3 +146,23 @@ CREATE POLICY "Motorlar okuma/yazma politikası" ON public.bikes FOR ALL USING (
 
 DROP POLICY IF EXISTS "Loglar okuma/yazma politikası" ON public.entry_logs;
 CREATE POLICY "Loglar okuma/yazma politikası" ON public.entry_logs FOR ALL USING (true) WITH CHECK (true);
+
+
+-- ============================================================
+-- 7. SUPABASE REALTIME (CANLI ANINDA WEBSOCKET SENKRONİZASYONU)
+-- ============================================================
+-- Mobilde ve PC'de yapılan işlemlerin saniyenin onda birinde diğer ekranda belirmesini sağlar
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.bikes;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.admins;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+END $$;

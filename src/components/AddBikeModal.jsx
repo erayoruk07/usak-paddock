@@ -21,6 +21,7 @@ import {
   formatPhoneNumber,
   formatTitleCaseTurkish
 } from '../data/mockData';
+import { compressImage } from '../utils/imageCompressor';
 
 // Hızlı Pist Donanımı Önerileri
 const POPULAR_TRACK_PARTS = [
@@ -80,15 +81,21 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
     setFormData({ ...formData, [field]: formatPhoneNumber(value) });
   };
 
-  // Fotoğraf Yükleme (Dosya / Kamera)
-  const handlePhotoUpload = (e) => {
+  // Fotoğraf Yükleme (Dosya / Kamera) - Ultra Hızlı İstemci Taraflı Sıkıştırma (8 MB -> 80 KB)
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, photoUrl: reader.result }));
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file, 1080, 1080, 0.75);
+        setFormData(prev => ({ ...prev, photoUrl: compressedBase64 }));
+      } catch (err) {
+        console.warn('Fotoğraf sıkıştırma hatası, orijinal yükleniyor:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({ ...prev, photoUrl: reader.result }));
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

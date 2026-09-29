@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
+import { compressImage } from '../utils/imageCompressor';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -66,15 +67,21 @@ export default function BikeDetailModal({
   const remaining = bike.remainingEntries ?? 0;
   const isExpired = remaining <= 0;
 
-  // Fotoğraf değiştirme
-  const handlePhotoUpload = (e) => {
+  // Fotoğraf değiştirme - Ultra Hızlı İstemci Sıkıştırma (8 MB -> 80 KB)
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        onUpdateBike({ ...bike, photoUrl: reader.result });
-      };
-      reader.readAsDataURL(file);
+      try {
+        const compressedBase64 = await compressImage(file, 1080, 1080, 0.75);
+        onUpdateBike({ ...bike, photoUrl: compressedBase64 });
+      } catch (err) {
+        console.warn('Fotoğraf sıkıştırma hatası:', err);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          onUpdateBike({ ...bike, photoUrl: reader.result });
+        };
+        reader.readAsDataURL(file);
+      }
     }
   };
 

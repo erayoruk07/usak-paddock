@@ -30,10 +30,11 @@ import {
   insertBike,
   updateBike,
   deleteBike,
-  clearAllTestBikes
+  clearAllTestBikes,
+  bikeFromDb
 } from './services/dbService';
 
-import { isSupabaseConfigured, testSupabaseConnection } from './lib/supabaseClient';
+import { supabase, isSupabaseConfigured, testSupabaseConnection } from './lib/supabaseClient';
 
 import Navbar from './components/Navbar';
 import BikeCard from './components/BikeCard';
@@ -83,19 +84,12 @@ export default function App() {
 
   const [dbStatus, setDbStatus] = useState('checking'); // 'connected', 'offline', 'not_configured'
 
-  // İlk açılışta Supabase bağlantısını ve tabloları kontrol et
+  // İlk açılışta paralel hızlı çekim ve Supabase Realtime (Anında Çift Yönlü Canlı Senkronizasyon)
   useEffect(() => {
     let isMounted = true;
 
     async function syncFromDatabase() {
       try {
-        if (isSupabaseConfigured) {
-          const test = await testSupabaseConnection();
-          if (isMounted) setDbStatus(test.ok ? 'connected' : 'offline');
-        } else {
-          if (isMounted) setDbStatus('not_configured');
-        }
-
         const [remoteAdmins, remoteGarages, remoteBikes] = await Promise.all([
           fetchAdmins(),
           fetchGarages(),
@@ -103,6 +97,7 @@ export default function App() {
         ]);
 
         if (isMounted) {
+          setDbStatus(isSupabaseConfigured ? 'connected' : 'offline');
           if (remoteAdmins && remoteAdmins.length > 0) setAdmins(remoteAdmins);
           if (remoteGarages && remoteGarages.length > 0) setGarages(remoteGarages);
           if (Array.isArray(remoteBikes)) {
@@ -111,12 +106,68 @@ export default function App() {
           }
         }
       } catch (err) {
+        if (isMounted) setDbStatus('offline');
         console.warn('[App DB sync error]', err);
       }
     }
 
     syncFromDatabase();
-    return () => { isMounted = false; };
+
+    // Supabase Realtime Dinleyicileri (Telefonda veya PC'de eklenen anında diğer ekranda belirir!)
+    let bikeChannel = null;
+    let adminChannel = null;
+
+    if (isSupabaseConfigured && supabase) {
+      bikeChannel = supabase
+        .channel('realtime:bikes')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, (payload) => {
+          if (!isMounted) return;
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const incoming = bikeFromDb(payload.new);
+            setBikes(prev => {
+              if (prev.some(b => b.id === incoming.id)) return prev;
+              return [incoming, ...prev];
+            });
+          } else if (payload.eventType === 'UPDATE' && payload.new) {
+            const updated = bikeFromDb(payload.new);
+            setBikes(prev => prev.map(b => b.id === updated.id ? updated : b));
+            setSelectedBike(prev => (prev?.id === updated.id ? updated : prev));
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setBikes(prev => prev.filter(b => b.id !== payload.old.id));
+            setSelectedBike(prev => (prev?.id === payload.old.id ? null : prev));
+          }
+        })
+        .subscribe();
+
+      adminChannel = supabase
+        .channel('realtime:admins')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'admins' }, (payload) => {
+          if (!isMounted) return;
+          if (payload.eventType === 'INSERT' && payload.new) {
+            const a = payload.new;
+            setAdmins(prev => [
+              ...prev.filter(x => x.username.toLowerCase() !== a.username.toLowerCase()),
+              {
+                id: a.id,
+                username: a.username,
+                password: a.password,
+                name: a.name || a.username,
+                role: a.role || 'VIEWER',
+                createdAt: a.created_at ? a.created_at.split('T')[0] : '2026-09-28'
+              }
+            ]);
+          } else if (payload.eventType === 'DELETE' && payload.old) {
+            setAdmins(prev => prev.filter(x => x.id !== payload.old.id && x.username !== payload.old.username));
+          }
+        })
+        .subscribe();
+    }
+
+    return () => {
+      isMounted = false;
+      if (bikeChannel) supabase.removeChannel(bikeChannel);
+      if (adminChannel) supabase.removeChannel(adminChannel);
+    };
   }, []);
 
   useEffect(() => {
