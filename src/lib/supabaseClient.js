@@ -1,33 +1,31 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Uşak Yarış Pisti - Doğrudan Entegre Canlı Supabase Bağlantısı
-const SUPABASE_PROJECT_URL = import.meta.env.VITE_SUPABASE_URL || 'https://uubgqqktvpnundcbiuvg.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_sDTF42qdPxI5NR3UwJY0Ug_wbfKlgpE';
+// Uşak Yarış Pisti - Canlı Supabase Bağlantısı
+const HARDCODED_URL = 'https://uubgqqktvpnundcbiuvg.supabase.co';
+const HARDCODED_KEY = 'sb_publishable_sDTF42qdPxI5NR3UwJY0Ug_wbfKlgpE';
 
-export const supabaseUrl = SUPABASE_PROJECT_URL.trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '');
-export const supabaseAnonKey = SUPABASE_ANON_KEY.trim();
+const rawUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim();
+const rawKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim();
 
-export const isSupabaseConfigured = Boolean(
-  supabaseUrl && 
-  supabaseAnonKey && 
-  supabaseUrl.startsWith('https://')
-);
+// Eğer ortam değişkeni https:// ile başlamıyorsa (örn. yanlışlıkla key yapıştırılmışsa), kesin çalışan URL'i kullan
+export const supabaseUrl = (rawUrl.startsWith('https://') ? rawUrl : HARDCODED_URL)
+  .replace(/\/rest\/v1\/?$/, '')
+  .replace(/\/+$/, '');
 
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: true,
-        autoRefreshToken: true
-      }
-    })
-  : null;
+// Eğer key secret key ise veya boşsa, front-end için tasarlanmış publishable anon key'i kullan
+export const supabaseAnonKey = (rawKey && !rawKey.startsWith('sb_secret') && rawKey.startsWith('sb_publishable_') ? rawKey : HARDCODED_KEY);
+
+export const isSupabaseConfigured = true;
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true
+  }
+});
 
 // Bağlantı durumunu kontrol etme fonksiyonu
 export async function testSupabaseConnection() {
-  if (!supabase) {
-    return { ok: false, message: 'Supabase istemcisi başlatılamadı' };
-  }
-
   try {
     const { data, error } = await supabase.from('garages').select('id').limit(1);
     if (error) throw error;
