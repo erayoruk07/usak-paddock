@@ -276,23 +276,25 @@ export default function BikeDetailModal({
               )}
             </div>
 
-            {/* Kalan Giriş Rozeti */}
-            <div>
-              {isExpired ? (
-                <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-black text-xs shadow-lg animate-pulse flex items-center">
-                  <AlertTriangle className="w-4 h-4 mr-1" /> Hak Bitti! (0)
-                </span>
-              ) : (
-                <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow flex items-center">
-                  <CheckCircle2 className="w-4 h-4 mr-1" /> {remaining} Giriş Hakkı
-                </span>
-              )}
-            </div>
+            {/* Kalan Giriş Rozeti (Gözlemciye gizli) */}
+            {!isViewer && (
+              <div>
+                {isExpired ? (
+                  <span className="px-3 py-1.5 rounded-xl bg-red-600 text-white font-black text-xs shadow-lg animate-pulse flex items-center">
+                    <AlertTriangle className="w-4 h-4 mr-1" /> Hak Bitti! (0)
+                  </span>
+                ) : (
+                  <span className="px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-black text-xs shadow flex items-center">
+                    <CheckCircle2 className="w-4 h-4 mr-1" /> {remaining} Giriş Hakkı
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 4 ANA BÜYÜK SEKME BUTONU */}
-        <div className="grid grid-cols-4 border-b-2 border-gray-700 bg-gray-900 text-center shrink-0">
+        {/* ANA SEKME BUTONLARI (Gözlemci için 3, Yönetici için 4) */}
+        <div className={`grid ${isViewer ? 'grid-cols-3' : 'grid-cols-4'} border-b-2 border-gray-700 bg-gray-900 text-center shrink-0`}>
           <button
             onClick={() => setActiveTab('parts')}
             className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
@@ -303,15 +305,17 @@ export default function BikeDetailModal({
             <span className="truncate">Parçalar</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('entries')}
-            className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
-              activeTab === 'entries' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
-            }`}
-          >
-            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span className="truncate">Pist ({remaining})</span>
-          </button>
+          {!isViewer && (
+            <button
+              onClick={() => setActiveTab('entries')}
+              className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
+                activeTab === 'entries' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="truncate">Pist ({remaining})</span>
+            </button>
+          )}
 
           {/* Sürücü & Araç Bilgileri */}
           <button
@@ -338,7 +342,7 @@ export default function BikeDetailModal({
         {/* SEKME İÇERİKLERİ */}
         <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0">
           
-          {/* 1. SEKME: TAKILI PARÇALAR */}
+          {/* 1. SEKME: TAKILI PARÇALAR (Hem Admin hem Gözlemci ekleyip çıkarabilir) */}
           {activeTab === 'parts' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
@@ -346,18 +350,16 @@ export default function BikeDetailModal({
                   Motora Takılan Parçalar ({bike.equippedParts?.length || 0}):
                 </span>
 
-                {!isViewer && (
-                  <button
-                    onClick={() => setShowAddPart(!showAddPart)}
-                    className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black flex items-center space-x-1 shadow"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Yeni Parça Ekle</span>
-                  </button>
-                )}
+                <button
+                  onClick={() => setShowAddPart(!showAddPart)}
+                  className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-black flex items-center space-x-1 shadow"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Yeni Parça Ekle</span>
+                </button>
               </div>
 
-              {!isViewer && showAddPart && (
+              {showAddPart && (
                 <form onSubmit={handleAddPart} className="p-3 bg-gray-900 border-2 border-cyan-500 rounded-2xl space-y-3">
                   <div className="text-xs font-bold text-cyan-400">Takılan Donanım Adı:</div>
                   <input 
@@ -402,15 +404,13 @@ export default function BikeDetailModal({
                       </div>
                     </div>
 
-                    {!isViewer && (
-                      <button
-                        onClick={() => handleRemovePart(part.id)}
-                        className="p-2 text-gray-500 hover:text-red-400 transition"
-                        title="Parçayı Sil"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
-                    )}
+                    <button
+                      onClick={() => handleRemovePart(part.id)}
+                      className="p-2 text-gray-500 hover:text-red-400 transition"
+                      title="Parçayı Sil"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
 
@@ -423,8 +423,8 @@ export default function BikeDetailModal({
             </div>
           )}
 
-          {/* 2. SEKME: PİST GİRİŞ BAKİYESİ VE LOGLARI */}
-          {activeTab === 'entries' && (
+          {/* 2. SEKME: PİST GİRİŞ BAKİYESİ VE LOGLARI (Sadece Yönetici) */}
+          {!isViewer && activeTab === 'entries' && (
             <div className="space-y-4">
               <div className="p-4 rounded-3xl bg-gray-900 border-2 border-gray-800 text-center space-y-3">
                 <div className="text-xs text-gray-400 font-bold uppercase">

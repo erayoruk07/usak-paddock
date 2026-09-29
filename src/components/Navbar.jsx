@@ -20,6 +20,8 @@ export default function Navbar({
   onOpenAdminModal,
   onLogout
 }) {
+  const isViewer = currentUser?.role === 'VIEWER';
+
   return (
     <header className="sticky top-0 z-40 bg-[#0B0F17]/95 backdrop-blur-md border-b border-gray-800 no-print">
       <div className="max-w-7xl mx-auto px-3 sm:px-6">
@@ -69,22 +71,24 @@ export default function Navbar({
               <span>QR Tara</span>
             </button>
 
-            <button
-              onClick={() => setActiveTab('rent')}
-              className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-black transition-all ${
-                activeTab === 'rent'
-                  ? 'bg-amber-600 text-white shadow'
-                  : 'text-gray-300 hover:text-white hover:bg-gray-800'
-              }`}
-            >
-              <Ticket className="w-3.5 h-3.5" />
-              <span>Giriş Hakları</span>
-              {overdueCount > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[9px] font-black">
-                  {overdueCount}
-                </span>
-              )}
-            </button>
+            {!isViewer && (
+              <button
+                onClick={() => setActiveTab('rent')}
+                className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-black transition-all ${
+                  activeTab === 'rent'
+                    ? 'bg-amber-600 text-white shadow'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                <Ticket className="w-3.5 h-3.5" />
+                <span>Giriş Hakları</span>
+                {overdueCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[9px] font-black">
+                    {overdueCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             <button
               onClick={() => setActiveTab('print')}
@@ -102,19 +106,21 @@ export default function Navbar({
           {/* 3. Sağ: Hızlı İşlemler (Bildirim, Yeni Motor, Admin Profili, Çıkış) */}
           <div className="flex items-center space-x-2 shrink-0">
             
-            {/* Bildirim Çanı */}
-            <button
-              onClick={onOpenNotifications}
-              className="relative p-2 rounded-xl bg-gray-900 border border-gray-700 text-gray-200 hover:text-white transition flex items-center justify-center"
-              title="Giriş Hakkı Bitenler"
-            >
-              <Bell className="w-4 h-4" />
-              {overdueCount > 0 && (
-                <span className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[9px] font-black bg-red-600 text-white rounded-full leading-none">
-                  {overdueCount}
-                </span>
-              )}
-            </button>
+            {/* Bildirim Çanı (Sadece Yönetici) */}
+            {!isViewer && (
+              <button
+                onClick={onOpenNotifications}
+                className="relative p-2 rounded-xl bg-gray-900 border border-gray-700 text-gray-200 hover:text-white transition flex items-center justify-center"
+                title="Giriş Hakkı Bitenler"
+              >
+                <Bell className="w-4 h-4" />
+                {overdueCount > 0 && (
+                  <span className="absolute -top-1 -right-1 px-1.5 py-0.2 text-[9px] font-black bg-red-600 text-white rounded-full leading-none">
+                    {overdueCount}
+                  </span>
+                )}
+              </button>
+            )}
 
             {/* Yeni Motor Ekle - Sadece ADMIN görebilir */}
             {currentUser?.role !== 'VIEWER' && (
@@ -187,18 +193,20 @@ export default function Navbar({
           <ScanLine className="w-5 h-5 mb-0.5" />
           QR Tara
         </button>
-        <button
-          onClick={() => setActiveTab('rent')}
-          className={`flex flex-col items-center p-1 text-[11px] font-bold relative ${
-            activeTab === 'rent' ? 'text-amber-400' : 'text-gray-400'
-          }`}
-        >
-          <Ticket className="w-5 h-5 mb-0.5" />
-          Haklar
-          {overdueCount > 0 && (
-            <span className="absolute top-0 right-1 w-2 h-2 rounded-full bg-red-500" />
-          )}
-        </button>
+        {!isViewer && (
+          <button
+            onClick={() => setActiveTab('rent')}
+            className={`flex flex-col items-center p-1 text-[11px] font-bold relative ${
+              activeTab === 'rent' ? 'text-amber-400' : 'text-gray-400'
+            }`}
+          >
+            <Ticket className="w-5 h-5 mb-0.5" />
+            Haklar
+            {overdueCount > 0 && (
+              <span className="absolute top-0 right-1 w-2 h-2 rounded-full bg-red-500" />
+            )}
+          </button>
+        )}
         <button
           onClick={() => setActiveTab('print')}
           className={`flex flex-col items-center p-1 text-[11px] font-bold ${

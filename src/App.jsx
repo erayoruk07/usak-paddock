@@ -580,8 +580,8 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: PİST GİRİŞ HAKLARI (BAKİYE & SEANS TAKİBİ) */}
-        {activeTab === 'rent' && (
+        {/* TAB 3: PİST GİRİŞ HAKLARI (BAKİYE & SEANS TAKİBİ - Sadece Yönetici) */}
+        {activeTab === 'rent' && currentUser?.role !== 'VIEWER' && (
           <div className="animate-fade-in">
             <RentManagement 
               bikes={bikes} 

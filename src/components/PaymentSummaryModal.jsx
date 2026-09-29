@@ -10,7 +10,8 @@ import {
   Ticket, 
   Play, 
   Plus, 
-  CheckCircle2
+  CheckCircle2,
+  Eye
 } from 'lucide-react';
 
 export default function PaymentSummaryModal({ 
@@ -240,31 +241,34 @@ export default function PaymentSummaryModal({
           {/* B. PİSTE ÇIKIŞ (SEANS) LİSTESİ */}
           {activeTab === 'entries' && (
             <div className="space-y-2">
-              {entryRecords.map((ent, idx) => (
-                <div 
-                  key={ent.id || idx}
-                  className="p-3 rounded-xl bg-gray-900/90 border border-gray-800 flex items-center justify-between text-xs"
-                >
-                  <div className="flex items-center space-x-2.5 min-w-0">
-                    <div className="w-7 h-7 rounded-lg bg-red-950/80 border border-red-800/60 text-red-400 flex items-center justify-center font-black shrink-0">
-                      🏁
-                    </div>
-                    <div className="min-w-0">
-                      <div className="font-bold text-white truncate">
-                        {ent.note || 'Piste Çıkış Yapıldı (-1 Hak)'}
+              {entryRecords.map((ent, idx) => {
+                const count = ent.deductCount || (ent.note?.match(/-(\d+)\s*Hak/i)?.[1]) || (ent.note?.match(/(\d+)\s*seans/i)?.[1]) || 1;
+                return (
+                  <div 
+                    key={ent.id || idx}
+                    className="p-3 rounded-xl bg-gray-900/90 border border-gray-800 flex items-center justify-between text-xs"
+                  >
+                    <div className="flex items-center space-x-2.5 min-w-0">
+                      <div className="w-7 h-7 rounded-lg bg-red-950/80 border border-red-800/60 text-red-400 flex items-center justify-center font-black shrink-0">
+                        🏁
                       </div>
-                      <div className="text-[10px] text-gray-500 font-mono flex items-center mt-0.5">
-                        <Clock className="w-3 h-3 mr-1 text-gray-400" />
-                        {ent.date}
+                      <div className="min-w-0">
+                        <div className="font-bold text-white truncate">
+                          {ent.note || `Piste Çıkış Yapıldı (-${count} Hak)`}
+                        </div>
+                        <div className="text-[10px] text-gray-500 font-mono flex items-center mt-0.5">
+                          <Clock className="w-3 h-3 mr-1 text-gray-400" />
+                          {ent.date}
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <span className="px-2 py-0.5 rounded-lg bg-red-950/70 border border-red-800/80 text-red-400 font-mono font-bold text-[10px] shrink-0">
-                    -1 Hak
-                  </span>
-                </div>
-              ))}
+                    <span className="px-2 py-0.5 rounded-lg bg-red-950/70 border border-red-800/80 text-red-400 font-mono font-bold text-[10px] shrink-0">
+                      -{count} Hak
+                    </span>
+                  </div>
+                );
+              })}
 
               {entryRecords.length === 0 && (
                 <div className="py-10 text-center text-gray-500 text-xs">
@@ -283,7 +287,7 @@ export default function PaymentSummaryModal({
           </div>
 
           <div className="flex items-center space-x-2 w-full sm:w-auto">
-            {onOpenTrackEntry && (
+            {onOpenTrackEntry && !isViewer && (
               <button
                 onClick={() => {
                   onClose();
@@ -297,7 +301,7 @@ export default function PaymentSummaryModal({
               </button>
             )}
 
-            {onOpenAddEntries && currentUser?.role !== 'VIEWER' && (
+            {onOpenAddEntries && !isViewer && (
               <button
                 onClick={() => {
                   onClose();
@@ -308,6 +312,13 @@ export default function PaymentSummaryModal({
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Hak / Ödeme</span>
               </button>
+            )}
+
+            {isViewer && (
+              <div className="px-3 py-1.5 rounded-xl bg-gray-800/70 border border-gray-700 text-gray-400 text-[11px] font-semibold flex items-center space-x-1.5">
+                <Eye className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Gözlemci Modu (Hak Düşme Yetkisi Yok)</span>
+              </div>
             )}
 
             <button
