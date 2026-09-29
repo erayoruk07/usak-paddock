@@ -136,7 +136,7 @@ ALTER TABLE public.bikes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entry_logs ENABLE ROW LEVEL SECURITY;
 
 -- Anon/Authenticated istemci tam okuma & yazma (Pist Ofis Operasyonu)
-CREATE POLICY "Admins okuma/yazma politikası" ON public.admins FOR ALL USING (true);
-CREATE POLICY "Garajlar okuma/yazma politikası" ON public.garages FOR ALL USING (true);
-CREATE POLICY "Motorlar okuma/yazma politikası" ON public.bikes FOR ALL USING (true);
-CREATE POLICY "Loglar okuma/yazma politikası" ON public.entry_logs FOR ALL USING (true);
+CREATE POLICY "Admins okuma/yazma politikası" ON public.admins FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Garajlar okuma/yazma politikası" ON public.garages FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Motorlar okuma/yazma politikası" ON public.bikes FOR ALL USING (true) WITH CHECK (true);
+CREATE POLICY "Loglar okuma/yazma politikası" ON public.entry_logs FOR ALL USING (true) WITH CHECK (true);

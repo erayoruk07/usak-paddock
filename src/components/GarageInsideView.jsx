@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Bike, 
@@ -36,6 +36,11 @@ export default function GarageInsideView({
   const isViewer = currentUser?.role === 'VIEWER';
   const [transferringBike, setTransferringBike] = useState(null);
   const [targetGarageId, setTargetGarageId] = useState('');
+
+  // Garaj içi açıldığında sayfayı en tepeye sıfırla
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [garage?.id]);
 
   // Bu garajdaki motorlar
   const garageBikes = bikes.filter(b => b.garageId === garage.id);

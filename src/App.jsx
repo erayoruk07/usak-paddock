@@ -191,17 +191,19 @@ export default function App() {
     activeTab
   ]);
 
-  // Garaj Açma (Mobil geçmişe ekler)
+  // Garaj Açma (Mobil geçmişe ekler ve sayfayı tepeye odaklar)
   const handleOpenGarage = (garage) => {
     try {
       window.history.pushState({ view: 'garage', garageId: garage.id }, '');
     } catch {}
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     setCurrentGarage(garage);
   };
 
   // Garajdan Geri Çıkma
   const handleBackFromGarage = () => {
     setCurrentGarage(null);
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     try {
       if (window.history.state?.view === 'garage') {
         window.history.back();

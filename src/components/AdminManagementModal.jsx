@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Users, UserPlus, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, User, Shield, Eye } from 'lucide-react';
-import { formatFirstLetterLower } from '../data/mockData';
+import { formatTitleCaseTurkish } from '../data/mockData';
 
 export default function AdminManagementModal({ admins, currentUser, dbStatus, onClose, onAddAdmin, onDeleteAdmin, onClearAllTestBikes }) {
   const [newUsername, setNewUsername] = useState('');
@@ -32,7 +32,7 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
       id: 'admin_' + Date.now(),
       username: newUsername.trim(),
       password: newPassword.trim(),
-      name: newName.trim() || newUsername.trim(),
+      name: formatTitleCaseTurkish(newName.trim()) || newUsername.trim(),
       role: newRole, // 'ADMIN' veya 'VIEWER'
       createdAt: new Date().toISOString().split('T')[0]
     };
@@ -119,12 +119,10 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
                 <label className="block text-gray-300 font-bold mb-1">Ad Soyad (İsteğe Bağlı)</label>
                 <input
                   type="text"
-                  placeholder="örn: mehmet görevli"
+                  placeholder="örn: Mehmet Görevli"
                   value={newName}
-                  autoCapitalize="none"
-                  autoCorrect="off"
-                  spellCheck="false"
-                  onChange={(e) => setNewName(formatFirstLetterLower(e.target.value))}
+                  onChange={(e) => setNewName(e.target.value)}
+                  onBlur={() => setNewName(formatTitleCaseTurkish(newName))}
                   className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white font-bold"
                 />
               </div>

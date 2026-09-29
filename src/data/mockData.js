@@ -116,6 +116,20 @@ export function formatFirstLetterLower(value) {
   return value.charAt(0).toLocaleLowerCase('tr-TR') + value.slice(1);
 }
 
+// Sürücü ve kişi isimlerini büyük/küçük fark etmeksizin tek tip standart Türkçe Baş Harf formatına getiren fonksiyon
+export function formatTitleCaseTurkish(str) {
+  if (!str) return '';
+  return str
+    .split(' ')
+    .map(word => {
+      if (!word) return '';
+      const first = word.charAt(0).toLocaleUpperCase('tr-TR');
+      const rest = word.slice(1).toLocaleLowerCase('tr-TR');
+      return first + rest;
+    })
+    .join(' ');
+}
+
 export const STORAGE_KEY_GARAGES = "usak_pist_garage_boxes_v3";
 export const STORAGE_KEY_BIKES = "usak_pist_garage_bikes_v5";
 

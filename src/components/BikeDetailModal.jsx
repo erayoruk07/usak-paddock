@@ -24,8 +24,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import confetti from 'canvas-confetti';
-import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatFirstLetterLower } from '../data/mockData';
+import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -178,10 +177,10 @@ export default function BikeDetailModal({
       color: vehicleForm.color.trim(),
       owner: {
         ...bike.owner,
-        fullName: vehicleForm.ownerName.trim() || bike.owner?.fullName,
+        fullName: formatTitleCaseTurkish(vehicleForm.ownerName.trim()) || bike.owner?.fullName,
         phone: vehicleForm.ownerPhone.trim() || bike.owner?.phone,
         bloodType: vehicleForm.bloodType || bike.owner?.bloodType,
-        emergencyName: vehicleForm.emergencyName.trim(),
+        emergencyName: formatTitleCaseTurkish(vehicleForm.emergencyName.trim()),
         emergencyRelation: vehicleForm.emergencyRelation || 'Eşi',
         emergencyPhone: vehicleForm.emergencyPhone.trim()
       }
@@ -634,10 +633,9 @@ export default function BikeDetailModal({
                       <input
                         type="text"
                         value={vehicleForm.ownerName}
-                        autoCapitalize="none"
-                        autoCorrect="off"
-                        spellCheck="false"
-                        onChange={(e) => setVehicleForm({ ...vehicleForm, ownerName: formatFirstLetterLower(e.target.value) })}
+                        onChange={(e) => setVehicleForm({ ...vehicleForm, ownerName: e.target.value })}
+                        onBlur={() => setVehicleForm({ ...vehicleForm, ownerName: formatTitleCaseTurkish(vehicleForm.ownerName) })}
+                        placeholder="örn: Kenan Sofuoğlu"
                         required
                         className="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white font-bold focus:border-amber-500 focus:outline-none"
                       />
@@ -673,10 +671,8 @@ export default function BikeDetailModal({
                         <input
                           type="text"
                           value={vehicleForm.emergencyName}
-                          autoCapitalize="none"
-                          autoCorrect="off"
-                          spellCheck="false"
-                          onChange={(e) => setVehicleForm({ ...vehicleForm, emergencyName: formatFirstLetterLower(e.target.value) })}
+                          onChange={(e) => setVehicleForm({ ...vehicleForm, emergencyName: e.target.value })}
+                          onBlur={() => setVehicleForm({ ...vehicleForm, emergencyName: formatTitleCaseTurkish(vehicleForm.emergencyName) })}
                           placeholder="Yakın Adı"
                           className="w-1/2 bg-gray-900 border border-gray-700 rounded-xl p-2 text-white font-bold text-xs"
                         />
