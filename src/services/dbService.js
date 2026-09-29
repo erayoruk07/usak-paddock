@@ -112,27 +112,29 @@ export async function insertAdmin(admin, currentUsername = 'Admin') {
   };
 
   // 1. Supabase Canlı DB'ye Insert
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { data, error } = await supabase.from('admins').insert([dbPayload]).select();
-      if (error) {
-        console.error('[DB insertAdmin] Supabase insert hatası:', error.message);
-        throw new Error(error.message);
-      } else if (data && data[0]) {
-        createdAdmin = {
-          id: data[0].id,
-          username: data[0].username,
-          password: data[0].password,
-          name: data[0].name || data[0].username,
-          role: data[0].role || 'VIEWER',
-          createdAt: data[0].created_at ? data[0].created_at.split('T')[0] : new Date().toISOString().split('T')[0]
-        };
-        console.log('[DB insertAdmin] Başarıyla Supabase DB\'ye eklendi:', createdAdmin);
-      }
-    } catch (e) {
-      console.error('[DB insertAdmin] Bağlantı hatası:', e);
-      throw e;
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase veritabanı istemcisi bağlı değil! Lütfen sayfayı yenileyiniz.');
+  }
+
+  try {
+    const { data, error } = await supabase.from('admins').insert([dbPayload]).select();
+    if (error) {
+      console.error('[DB insertAdmin] Supabase insert hatası:', error.message);
+      throw new Error(`Veritabanı Hatası: ${error.message}`);
+    } else if (data && data[0]) {
+      createdAdmin = {
+        id: data[0].id,
+        username: data[0].username,
+        password: data[0].password,
+        name: data[0].name || data[0].username,
+        role: data[0].role || 'VIEWER',
+        createdAt: data[0].created_at ? data[0].created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+      };
+      console.log('[DB insertAdmin] Başarıyla Supabase DB\'ye eklendi:', createdAdmin);
     }
+  } catch (e) {
+    console.error('[DB insertAdmin] Bağlantı hatası:', e);
+    throw e;
   }
 
   // 2. Yerel Admin listesini de güncelle
@@ -280,17 +282,21 @@ export async function fetchBikes() {
 export async function insertBike(bike, currentUsername = 'Admin') {
   const row = bikeToDb(bike);
 
-  if (isSupabaseConfigured && supabase) {
-    try {
-      const { error } = await supabase.from('bikes').insert([row]);
-      if (error) {
-        console.error('[DB insertBike] Supabase insert hatası:', error.message);
-      } else {
-        console.log('[DB insertBike] Motor Supabase DB\'ye eklendi:', bike.id);
-      }
-    } catch (e) {
-      console.error('[DB insertBike] Bağlantı hatası:', e);
+  if (!isSupabaseConfigured || !supabase) {
+    throw new Error('Supabase canlı veritabanı aktif değil!');
+  }
+
+  try {
+    const { error } = await supabase.from('bikes').insert([row]);
+    if (error) {
+      console.error('[DB insertBike] Supabase insert hatası:', error.message);
+      throw new Error(`Motor Eklenemedi: ${error.message}`);
+    } else {
+      console.log('[DB insertBike] Motor Supabase DB\'ye eklendi:', bike.id);
     }
+  } catch (e) {
+    console.error('[DB insertBike] Bağlantı hatası:', e);
+    throw e;
   }
 
   await logAction({
