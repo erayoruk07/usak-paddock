@@ -30,8 +30,8 @@ export default function Navbar({
             className="flex items-center space-x-2.5 cursor-pointer select-none shrink-0" 
             onClick={() => setActiveTab('pitlane')}
           >
-            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-red-600/30 shrink-0 border border-red-500/40">
-              <img src="/logo.svg" alt="Uşak Paddock Logo" className="w-full h-full object-cover" />
+            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg shadow-black/60 shrink-0 border border-white/15 bg-black">
+              <img src="/logo.png" alt="Uşak Paddock Logo" className="w-full h-full object-cover" />
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black text-white tracking-wider uppercase block leading-tight">

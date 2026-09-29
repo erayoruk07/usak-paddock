@@ -445,32 +445,43 @@ export default function App() {
 
   return (
     <PullToRefresh onRefresh={refreshData}>
-      <div className="min-h-screen bg-[#0B0F17] text-gray-100 flex flex-col selection:bg-red-600 selection:text-white carbon-pattern">
+      <div className="min-h-screen bg-[#0B0F17] text-gray-100 flex flex-col selection:bg-red-600 selection:text-white carbon-pattern relative overflow-x-hidden">
         
+        {/* Şık Arka Plan Logo Filigranı (Motorsport Ambient Watermark) */}
+        <div className="fixed inset-0 pointer-events-none flex items-center justify-center overflow-hidden z-0 select-none">
+          <div className="relative w-[320px] sm:w-[540px] lg:w-[680px] aspect-square opacity-[0.035] sm:opacity-[0.045] filter blur-[0.5px]">
+            <img 
+              src="/logo.png" 
+              alt="" 
+              className="w-full h-full object-contain"
+            />
+          </div>
+        </div>
+
         {/* Üst Menü */}
         <Navbar 
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          if (tab === 'scanner') {
-            setIsScannerOpen(true);
-          } else {
-            setActiveTab(tab);
-          }
-        }}
-        overdueCount={expiredCount}
-        onOpenAddModal={() => {
-          if (currentUser?.role === 'VIEWER') return;
-          setAddBikeTargetGarageId(currentGarage ? currentGarage.id : 'box-1');
-          setIsAddModalOpen(true);
-        }}
-        onOpenNotifications={() => setIsNotificationOpen(true)}
-        currentUser={currentUser}
-        onOpenAdminModal={() => setIsAdminModalOpen(true)}
-        onLogout={handleLogout}
-      />
+          activeTab={activeTab}
+          setActiveTab={(tab) => {
+            if (tab === 'scanner') {
+              setIsScannerOpen(true);
+            } else {
+              setActiveTab(tab);
+            }
+          }}
+          overdueCount={expiredCount}
+          onOpenAddModal={() => {
+            if (currentUser?.role === 'VIEWER') return;
+            setAddBikeTargetGarageId(currentGarage ? currentGarage.id : 'box-1');
+            setIsAddModalOpen(true);
+          }}
+          onOpenNotifications={() => setIsNotificationOpen(true)}
+          currentUser={currentUser}
+          onOpenAdminModal={() => setIsAdminModalOpen(true)}
+          onLogout={handleLogout}
+        />
 
-      {/* Ana Gövde */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Ana Gövde */}
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
         
         {/* TAB 1: 10 PADDOCK BOX (GARAJ KAPILARI) */}
         {activeTab === 'pitlane' && (

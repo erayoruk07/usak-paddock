@@ -41,17 +41,23 @@ export default function LoginScreen({ onLogin, admins }) {
       <div className="w-full max-w-md mx-auto bg-[#151922] border-2 border-gray-700 rounded-3xl shadow-2xl overflow-hidden p-6 sm:p-8 space-y-6 my-auto">
         
         {/* Logo ve Başlık */}
-        <div className="text-center space-y-2">
-          <div className="w-16 h-16 rounded-3xl bg-red-600 flex items-center justify-center text-white mx-auto shadow-xl shadow-red-600/30">
-            <Warehouse className="w-8 h-8" />
+        <div className="text-center space-y-3">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-3xl overflow-hidden shadow-2xl shadow-red-950/50 border border-white/10 p-1 bg-black/40">
+            <img 
+              src="/logo.png" 
+              alt="Uşak Yarış Pisti Paddock Logo" 
+              className="w-full h-full object-cover rounded-2xl" 
+            />
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wider uppercase">
-            UŞAK PİSTİ GARAJ
-          </h1>
-          <p className="text-xs sm:text-sm text-gray-400 font-bold">
-            Paddock Box Yönetim & Giriş Sistemi
-          </p>
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wider uppercase">
+              UŞAK PİSTİ GARAJ
+            </h1>
+            <p className="text-xs sm:text-sm text-gray-400 font-bold mt-0.5">
+              Paddock Box Yönetim & Giriş Sistemi
+            </p>
+          </div>
         </div>
 
         {/* Hata Mesajı */}
