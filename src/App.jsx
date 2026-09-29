@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Bike, 
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 
 import { 
@@ -30,13 +31,13 @@ import {
   insertBike,
   updateBike,
   deleteBike,
-  clearAllTestBikes,
-  bikeFromDb
+  clearAllTestBikes
 } from './services/dbService';
 
-import { supabase, isSupabaseConfigured, testSupabaseConnection } from './lib/supabaseClient';
+import { isSupabaseConfigured } from './lib/supabaseClient';
 
 import Navbar from './components/Navbar';
+import PullToRefresh from './components/PullToRefresh';
 import BikeCard from './components/BikeCard';
 import BikeDetailModal from './components/BikeDetailModal';
 import QRScannerModal from './components/QRScannerModal';
@@ -84,90 +85,31 @@ export default function App() {
 
   const [dbStatus, setDbStatus] = useState('checking'); // 'connected', 'offline', 'not_configured'
 
-  // İlk açılışta paralel hızlı çekim ve Supabase Realtime (Anında Çift Yönlü Canlı Senkronizasyon)
-  useEffect(() => {
-    let isMounted = true;
+  // Standart ve Kurşun Geçirmez Veritabanı Okuma (SELECT)
+  const refreshData = async () => {
+    try {
+      const [remoteAdmins, remoteGarages, remoteBikes] = await Promise.all([
+        fetchAdmins(),
+        fetchGarages(),
+        fetchBikes()
+      ]);
 
-    async function syncFromDatabase() {
-      try {
-        const [remoteAdmins, remoteGarages, remoteBikes] = await Promise.all([
-          fetchAdmins(),
-          fetchGarages(),
-          fetchBikes()
-        ]);
-
-        if (isMounted) {
-          setDbStatus(isSupabaseConfigured ? 'connected' : 'offline');
-          if (remoteAdmins && remoteAdmins.length > 0) setAdmins(remoteAdmins);
-          if (remoteGarages && remoteGarages.length > 0) setGarages(remoteGarages);
-          if (Array.isArray(remoteBikes)) {
-            setBikes(remoteBikes);
-            saveBikes(remoteBikes);
-          }
-        }
-      } catch (err) {
-        if (isMounted) setDbStatus('offline');
-        console.warn('[App DB sync error]', err);
+      setDbStatus(isSupabaseConfigured ? 'connected' : 'offline');
+      if (remoteAdmins && remoteAdmins.length > 0) setAdmins(remoteAdmins);
+      if (remoteGarages && remoteGarages.length > 0) setGarages(remoteGarages);
+      if (Array.isArray(remoteBikes)) {
+        setBikes(remoteBikes);
+        saveBikes(remoteBikes);
       }
+    } catch (err) {
+      setDbStatus('offline');
+      console.warn('[App DB sync error]', err);
     }
+  };
 
-    syncFromDatabase();
-
-    // Supabase Realtime Dinleyicileri (Telefonda veya PC'de eklenen anında diğer ekranda belirir!)
-    let bikeChannel = null;
-    let adminChannel = null;
-
-    if (isSupabaseConfigured && supabase) {
-      bikeChannel = supabase
-        .channel('realtime:bikes')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'bikes' }, (payload) => {
-          if (!isMounted) return;
-          if (payload.eventType === 'INSERT' && payload.new) {
-            const incoming = bikeFromDb(payload.new);
-            setBikes(prev => {
-              if (prev.some(b => b.id === incoming.id)) return prev;
-              return [incoming, ...prev];
-            });
-          } else if (payload.eventType === 'UPDATE' && payload.new) {
-            const updated = bikeFromDb(payload.new);
-            setBikes(prev => prev.map(b => b.id === updated.id ? updated : b));
-            setSelectedBike(prev => (prev?.id === updated.id ? updated : prev));
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setBikes(prev => prev.filter(b => b.id !== payload.old.id));
-            setSelectedBike(prev => (prev?.id === payload.old.id ? null : prev));
-          }
-        })
-        .subscribe();
-
-      adminChannel = supabase
-        .channel('realtime:admins')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'admins' }, (payload) => {
-          if (!isMounted) return;
-          if (payload.eventType === 'INSERT' && payload.new) {
-            const a = payload.new;
-            setAdmins(prev => [
-              ...prev.filter(x => x.username.toLowerCase() !== a.username.toLowerCase()),
-              {
-                id: a.id,
-                username: a.username,
-                password: a.password,
-                name: a.name || a.username,
-                role: a.role || 'VIEWER',
-                createdAt: a.created_at ? a.created_at.split('T')[0] : '2026-09-28'
-              }
-            ]);
-          } else if (payload.eventType === 'DELETE' && payload.old) {
-            setAdmins(prev => prev.filter(x => x.id !== payload.old.id && x.username !== payload.old.username));
-          }
-        })
-        .subscribe();
-    }
-
-    return () => {
-      isMounted = false;
-      if (bikeChannel) supabase.removeChannel(bikeChannel);
-      if (adminChannel) supabase.removeChannel(adminChannel);
-    };
+  // İlk sayfa açılışında veritabanından çek
+  useEffect(() => {
+    refreshData();
   }, []);
 
   useEffect(() => {
@@ -503,10 +445,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F17] text-gray-100 flex flex-col selection:bg-red-600 selection:text-white carbon-pattern">
-      
-      {/* Üst Menü */}
-      <Navbar 
+    <PullToRefresh onRefresh={refreshData}>
+      <div className="min-h-screen bg-[#0B0F17] text-gray-100 flex flex-col selection:bg-red-600 selection:text-white carbon-pattern">
+        
+        {/* Üst Menü */}
+        <Navbar 
         activeTab={activeTab}
         setActiveTab={(tab) => {
           if (tab === 'scanner') {
@@ -669,6 +612,14 @@ export default function App() {
                     ? 'Yerel Mod (DB Çevrimdışı)' 
                     : 'Yerel Mod (Supabase Bekleniyor)'}
               </span>
+              <button
+                onClick={refreshData}
+                title="Veritabanını Yenile (SELECT)"
+                className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 hover:text-white transition flex items-center space-x-1 border border-gray-700 active:scale-95 ml-1"
+              >
+                <RefreshCw className="w-3 h-3 text-cyan-400" />
+                <span className="text-[10px] font-bold text-cyan-300">Yenile</span>
+              </button>
             </div>
             <span className="text-gray-600">•</span>
             <span>Uşak Yarış Pisti •</span>
@@ -760,6 +711,7 @@ export default function App() {
         />
       )}
 
-    </div>
+      </div>
+    </PullToRefresh>
   );
 }
