@@ -25,8 +25,8 @@ export default function RentManagement({
 }) {
   const isViewer = currentUser?.role === 'VIEWER';
   
-  // Filtre: 'EXPIRED' (Hakkı Bitenler), 'ACTIVE' (Hakkı Olanlar), 'ALL' (Tümü)
-  const [filter, setFilter] = useState('EXPIRED');
+  // Filtre: 'ALL' (Tümü - Varsayılan), 'EXPIRED' (Hakkı Bitenler), 'ACTIVE' (Hakkı Olanlar)
+  const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBikeForPayment, setSelectedBikeForPayment] = useState(null);
 
@@ -115,8 +115,8 @@ export default function RentManagement({
   return (
     <div className="space-y-6">
       
-      {/* 2 BÜYÜK VE NET ÖZET KUTUSU */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* 2 BÜYÜK VE NET ÖZET KUTUSU - Sadece PC ve Tablette Göster, Mobilde Gizle */}
+      <div className="hidden sm:grid sm:grid-cols-2 gap-4">
         
         {/* Kırmızı: Giriş Hakkı Bitenler */}
         <div 

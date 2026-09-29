@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Bike, 
-  AlertTriangle,
-  RefreshCw
+  AlertTriangle
 } from 'lucide-react';
 
 import { 
@@ -361,8 +360,9 @@ export default function App() {
   const handleConfirmAddEntries = async (count, paymentMethod, paymentNote, amount = null) => {
     if (!addEntriesBike) return;
     const remaining = addEntriesBike.remainingEntries ?? 0;
-    const totalGranted = addEntriesBike.totalEntriesGranted ?? 5;
-    const finalAmount = amount || (count === 5 ? 7000 : count === 10 ? 14000 : count === 1 ? 1500 : count * 1400);
+    const finalAmount = (amount !== null && amount !== undefined) 
+      ? Number(amount) 
+      : (count === 5 ? 7000 : count === 10 ? 14000 : count === 1 ? 1500 : count * 1400);
 
     const now = new Date();
     const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
@@ -612,14 +612,6 @@ export default function App() {
                     ? 'Yerel Mod (DB Çevrimdışı)' 
                     : 'Yerel Mod (Supabase Bekleniyor)'}
               </span>
-              <button
-                onClick={refreshData}
-                title="Veritabanını Yenile (SELECT)"
-                className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-cyan-400 hover:text-white transition flex items-center space-x-1 border border-gray-700 active:scale-95 ml-1"
-              >
-                <RefreshCw className="w-3 h-3 text-cyan-400" />
-                <span className="text-[10px] font-bold text-cyan-300">Yenile</span>
-              </button>
             </div>
             <span className="text-gray-600">•</span>
             <span>Uşak Yarış Pisti •</span>

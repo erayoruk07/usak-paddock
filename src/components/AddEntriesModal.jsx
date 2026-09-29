@@ -22,7 +22,7 @@ export default function AddEntriesModal({ bike, onClose, onConfirm }) {
   // Yüklenecek hak sayısı (Varsayılan 5)
   const [entryCount, setEntryCount] = useState(5);
   const [paymentMethod, setPaymentMethod] = useState('Nakit');
-  const [amount, setAmount] = useState(7000);
+  const [amount, setAmount] = useState('7000');
   const [paymentNote, setPaymentNote] = useState('7.000 TL ödendi (Nakit)');
 
   const packages = [
@@ -33,7 +33,7 @@ export default function AddEntriesModal({ bike, onClose, onConfirm }) {
 
   const handleSelectPackage = (pkg) => {
     setEntryCount(pkg.count);
-    setAmount(pkg.rawPrice);
+    setAmount(String(pkg.rawPrice));
     setPaymentNote(`${pkg.price} ödendi (${paymentMethod})`);
   };
 
@@ -41,7 +41,7 @@ export default function AddEntriesModal({ bike, onClose, onConfirm }) {
     const validCount = Math.max(1, newCount);
     setEntryCount(validCount);
     const calculated = validCount === 5 ? 7000 : validCount === 10 ? 14000 : validCount === 1 ? 1500 : validCount * 1400;
-    setAmount(calculated);
+    setAmount(String(calculated));
     setPaymentNote(`${calculated.toLocaleString('tr-TR')} TL ödendi (${paymentMethod})`);
   };
 
@@ -60,7 +60,8 @@ export default function AddEntriesModal({ bike, onClose, onConfirm }) {
       });
     } catch {}
 
-    const finalAmount = Number(amount) || (entryCount === 5 ? 7000 : entryCount === 10 ? 14000 : entryCount * 1400);
+    // Kullanıcı 0 yazdıysa kesinlikle 0 TL olarak kaydedilir (fallback yapılmaz)
+    const finalAmount = amount === '' ? 0 : (isNaN(Number(amount)) ? 0 : Number(amount));
     onConfirm(entryCount, paymentMethod, paymentNote, finalAmount);
     onClose();
   };
@@ -206,12 +207,16 @@ export default function AddEntriesModal({ bike, onClose, onConfirm }) {
             </span>
             <div className="flex items-center space-x-1.5">
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={amount}
+                placeholder="0"
                 onChange={(e) => {
-                  const val = Number(e.target.value) || 0;
-                  setAmount(val);
-                  setPaymentNote(`${val.toLocaleString('tr-TR')} TL ödendi (${paymentMethod})`);
+                  const raw = e.target.value.replace(/[^0-9]/g, '');
+                  const clean = raw === '' ? '' : (raw.length > 1 && raw.startsWith('0') ? String(Number(raw)) : raw);
+                  setAmount(clean);
+                  const num = clean === '' ? 0 : Number(clean);
+                  setPaymentNote(`${num.toLocaleString('tr-TR')} TL ödendi (${paymentMethod})`);
                 }}
                 className="w-28 bg-black border border-gray-700 rounded-xl px-2.5 py-1.5 text-amber-400 font-mono font-black text-base text-right focus:border-amber-500 focus:outline-none"
               />
