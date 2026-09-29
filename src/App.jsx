@@ -21,6 +21,20 @@ import {
   setCurrentUser
 } from './data/authData';
 
+import {
+  fetchAdmins,
+  insertAdmin,
+  deleteAdmin,
+  fetchGarages,
+  fetchBikes,
+  insertBike,
+  updateBike,
+  deleteBike,
+  clearAllTestBikes
+} from './services/dbService';
+
+import { isSupabaseConfigured, testSupabaseConnection } from './lib/supabaseClient';
+
 import Navbar from './components/Navbar';
 import BikeCard from './components/BikeCard';
 import BikeDetailModal from './components/BikeDetailModal';
@@ -33,6 +47,8 @@ import PitLaneGarages from './components/PitLaneGarages';
 import GarageInsideView from './components/GarageInsideView';
 import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
+import TrackEntryModal from './components/TrackEntryModal';
+import AddEntriesModal from './components/AddEntriesModal';
 
 export default function App() {
   // Giriş ve Yetkili Durumu
@@ -56,10 +72,49 @@ export default function App() {
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
   const [printBikeTarget, setPrintBikeTarget] = useState(null);
   const [addBikeTargetGarageId, setAddBikeTargetGarageId] = useState('box-1');
+  
+  // Pist Giriş & Hak Yükleme Pop-up Hedef Motorları
+  const [trackEntryBike, setTrackEntryBike] = useState(null);
+  const [addEntriesBike, setAddEntriesBike] = useState(null);
 
   // Arama & Filtreler
   const [searchTerm, setSearchTerm] = useState('');
   const [filterType, setFilterType] = useState('ALL');
+
+  const [dbStatus, setDbStatus] = useState('checking'); // 'connected', 'offline', 'not_configured'
+
+  // İlk açılışta Supabase bağlantısını ve tabloları kontrol et
+  useEffect(() => {
+    let isMounted = true;
+
+    async function syncFromDatabase() {
+      try {
+        if (isSupabaseConfigured) {
+          const test = await testSupabaseConnection();
+          if (isMounted) setDbStatus(test.ok ? 'connected' : 'offline');
+        } else {
+          if (isMounted) setDbStatus('not_configured');
+        }
+
+        const [remoteAdmins, remoteGarages, remoteBikes] = await Promise.all([
+          fetchAdmins(),
+          fetchGarages(),
+          fetchBikes()
+        ]);
+
+        if (isMounted) {
+          if (remoteAdmins && remoteAdmins.length > 0) setAdmins(remoteAdmins);
+          if (remoteGarages && remoteGarages.length > 0) setGarages(remoteGarages);
+          if (remoteBikes && remoteBikes.length > 0) setBikes(remoteBikes);
+        }
+      } catch (err) {
+        console.warn('[App DB sync error]', err);
+      }
+    }
+
+    syncFromDatabase();
+    return () => { isMounted = false; };
+  }, []);
 
   useEffect(() => {
     saveGarages(garages);
@@ -105,27 +160,35 @@ export default function App() {
     }
   };
 
-  // Yeni Admin Ekleme
-  const handleAddAdmin = (newAdmin) => {
-    setAdmins([...admins, newAdmin]);
+  // Yeni Admin/Kullanıcı Ekleme - Doğrudan Supabase DB'ye Insert
+  const handleAddAdmin = async (newAdmin) => {
+    setAdmins(prev => [...prev, newAdmin]);
+    await insertAdmin(newAdmin, currentUser?.name || currentUser?.username || 'Admin');
   };
 
-  // Admin Silme
-  const handleDeleteAdmin = (adminId) => {
-    setAdmins(admins.filter(a => a.id !== adminId));
+  // Admin/Kullanıcı Silme - Doğrudan Supabase DB'den Delete
+  const handleDeleteAdmin = async (adminId) => {
+    const target = admins.find(a => a.id === adminId);
+    setAdmins(prev => prev.filter(a => a.id !== adminId));
+    await deleteAdmin(adminId, target?.username, currentUser?.name || currentUser?.username || 'Admin');
   };
 
-  // Motor Güncelleme
-  const handleUpdateBike = (updatedBike) => {
+  // Motor Güncelleme - Doğrudan Supabase DB'ye Update & Log
+  const handleUpdateBike = async (updatedBike, logInfo = null) => {
     const nextBikes = bikes.map(b => b.id === updatedBike.id ? updatedBike : b);
     setBikes(nextBikes);
     if (selectedBike?.id === updatedBike.id) {
       setSelectedBike(updatedBike);
     }
+    await updateBike(updatedBike, currentUser?.name || currentUser?.username || 'Admin', logInfo);
   };
 
-  // Motor Ekleme (Mükerrer Kayıt Korumalı)
-  const handleAddBike = (newBike) => {
+  // Motor Ekleme - Doğrudan Supabase DB'ye Insert & Log
+  const handleAddBike = async (newBike) => {
+    if (currentUser?.role === 'VIEWER') {
+      alert('Sadece görüntüleme yetkiniz bulunmaktadır! Yeni araç ekleyemezsiniz.');
+      return;
+    }
     setBikes(prevBikes => {
       // Aynı ID veya aynı şasi numaralı araç varsa ikinci kez ekleme
       const isDuplicate = prevBikes.some(
@@ -134,31 +197,128 @@ export default function App() {
       if (isDuplicate) return prevBikes;
       return [newBike, ...prevBikes];
     });
+
+    await insertBike(newBike, currentUser?.name || currentUser?.username || 'Admin');
   };
 
-  // Motor Silme
-  const handleDeleteBike = (bikeId) => {
-    setBikes(bikes.filter(b => b.id !== bikeId));
+  // Motor Silme - Doğrudan Supabase DB'den Delete & Log
+  const handleDeleteBike = async (bikeId) => {
+    setBikes(prev => prev.filter(b => b.id !== bikeId));
     if (selectedBike?.id === bikeId) setSelectedBike(null);
+    await deleteBike(bikeId, currentUser?.name || currentUser?.username || 'Admin');
   };
 
-  // Motoru Başka Paddock Box'a Taşıma
-  const handleMoveBike = (bikeId, targetGarageId) => {
+  // Motoru Başka Paddock Box'a Taşıma - Doğrudan Supabase DB Update & Log
+  const handleMoveBike = async (bikeId, targetGarageId) => {
     const targetGarage = garages.find(g => g.id === targetGarageId);
     if (!targetGarage) return;
 
+    let movedBike = null;
     const nextBikes = bikes.map(b => {
       if (b.id === bikeId) {
-        return {
+        movedBike = {
           ...b,
           garageId: targetGarage.id,
           garageNo: targetGarage.name
         };
+        return movedBike;
       }
       return b;
     });
 
     setBikes(nextBikes);
+    if (movedBike) {
+      await updateBike(movedBike, currentUser?.name || currentUser?.username || 'Admin', {
+        actionType: 'BIKE_MOVED',
+        note: `Araç ${targetGarage.name} garajına taşındı`
+      });
+    }
+  };
+
+  // Test Verilerini Sıfırlama (Canlı DB & Yerel)
+  const handleClearAllTestBikes = async () => {
+    if (window.confirm("⚠️ DİKKAT: Sistemdeki tüm test motorları, takılı parçalar ve seans kayıtları veritabanından tamamen silinecektir.\n\nGerçek verilerinizi sıfırdan girmek için onaylıyor musunuz?")) {
+      await clearAllTestBikes(currentUser?.name || currentUser?.username || 'Admin');
+      setBikes([]);
+      setSelectedBike(null);
+      alert("✅ Tüm test verileri başarıyla temizlendi! 10 Paddock Box garajınız gerçek motor kayıtları için hazır.");
+    }
+  };
+
+  // Piste Giriş Pop-up Onayı (1 veya birden fazla hak düşme)
+  const handleConfirmTrackEntry = async (deductCount, note) => {
+    if (!trackEntryBike) return;
+    const remaining = trackEntryBike.remainingEntries ?? 0;
+    const nextRemaining = Math.max(0, remaining - deductCount);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    const entryRecord = {
+      id: 'entry_' + Date.now(),
+      type: 'ENTRY',
+      date: dateStr,
+      deductCount,
+      note: note || `${deductCount} Seans Piste Giriş`,
+      remainingEntries: nextRemaining,
+      performedBy: currentUser?.name || currentUser?.username || 'Pist Yöneticisi'
+    };
+
+    const newHistory = [
+      entryRecord,
+      ...(trackEntryBike.entryHistory || [])
+    ];
+
+    const updated = {
+      ...trackEntryBike,
+      remainingEntries: nextRemaining,
+      entryHistory: newHistory
+    };
+
+    await handleUpdateBike(updated, {
+      actionType: 'TRACK_ENTRY',
+      note: `${deductCount} seans piste giriş yapıldı. ${note}. Kalan Hak: ${nextRemaining}`
+    });
+  };
+
+  // Hak / Paket Yükle Pop-up Onayı (Detaylı Ödeme Loglaması)
+  const handleConfirmAddEntries = async (count, paymentMethod, paymentNote, amount = null) => {
+    if (!addEntriesBike) return;
+    const remaining = addEntriesBike.remainingEntries ?? 0;
+    const totalGranted = addEntriesBike.totalEntriesGranted ?? 5;
+    const finalAmount = amount || (count === 5 ? 7000 : count === 10 ? 14000 : count === 1 ? 1500 : count * 1400);
+
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+
+    const paymentRecord = {
+      id: 'pay_' + Date.now(),
+      type: 'PAYMENT',
+      date: dateStr,
+      amount: finalAmount,
+      method: paymentMethod || 'Nakit',
+      entriesCount: count,
+      note: paymentNote || `+${count} Seans Hak Tanımlandı`,
+      performedBy: currentUser?.name || currentUser?.username || 'Pist Yöneticisi'
+    };
+
+    const nextHistory = [
+      paymentRecord,
+      ...(addEntriesBike.entryHistory || [])
+    ];
+
+    const updated = {
+      ...addEntriesBike,
+      remainingEntries: remaining + count,
+      totalEntriesGranted: totalGranted + count,
+      paymentAmount: (addEntriesBike.paymentAmount || 0) + finalAmount,
+      entryHistory: nextHistory
+    };
+
+    await handleUpdateBike(updated, {
+      actionType: 'PAYMENT_RECEIVED',
+      note: `Ödeme Alındı: ${finalAmount.toLocaleString('tr-TR')} ₺ (${paymentMethod}). +${count} Seans tanımlandı. Not: ${paymentNote}`
+    });
   };
 
   // QR Tarama Sonucu Motor Bulunduğunda
@@ -223,6 +383,7 @@ export default function App() {
         }}
         overdueCount={expiredCount}
         onOpenAddModal={() => {
+          if (currentUser?.role === 'VIEWER') return;
           setAddBikeTargetGarageId(currentGarage ? currentGarage.id : 'box-1');
           setIsAddModalOpen(true);
         }}
@@ -249,16 +410,20 @@ export default function App() {
                 garage={currentGarage}
                 bikes={bikes}
                 allGarages={garages}
+                currentUser={currentUser}
                 onBack={() => setCurrentGarage(null)}
                 onSelectBike={(b) => setSelectedBike(b)}
                 onShowQR={(b) => setSelectedBike({ ...b, initialTab: 'qr' })}
                 onQuickWhatsApp={handleQuickWhatsApp}
                 onAddNewBikeToThisGarage={(g) => {
+                  if (currentUser?.role === 'VIEWER') return;
                   setAddBikeTargetGarageId(g.id);
                   setIsAddModalOpen(true);
                 }}
                 onMoveBike={handleMoveBike}
                 onUpdateBike={handleUpdateBike}
+                onOpenTrackEntry={(b) => setTrackEntryBike(b)}
+                onOpenAddEntries={(b) => setAddEntriesBike(b)}
               />
             )}
           </div>
@@ -333,8 +498,11 @@ export default function App() {
           <div className="animate-fade-in">
             <RentManagement 
               bikes={bikes} 
+              currentUser={currentUser}
               onUpdateBike={handleUpdateBike}
               onSelectBike={(b) => setSelectedBike(b)}
+              onOpenTrackEntry={(b) => setTrackEntryBike(b)}
+              onOpenAddEntries={(b) => setAddEntriesBike(b)}
             />
           </div>
         )}
@@ -354,10 +522,22 @@ export default function App() {
         )}
 
         {/* Alt Bilgi & Profesyonel İmza */}
-        <footer className="mt-12 pt-6 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-2 no-print">
-          <div className="flex items-center space-x-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-            <span>Uşak Yarış Pisti • 10 Paddock Box Garaj & Bakiye Sistemi</span>
+        <footer className="mt-12 pt-6 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between text-xs text-gray-500 gap-3 no-print">
+          <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-1.5">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                dbStatus === 'connected' ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'
+              }`}></span>
+              <span className="font-semibold text-gray-400">
+                {dbStatus === 'connected' 
+                  ? 'Supabase Canlı DB Bağlı' 
+                  : dbStatus === 'offline' 
+                    ? 'Yerel Mod (DB Çevrimdışı)' 
+                    : 'Yerel Mod (Supabase Bekleniyor)'}
+              </span>
+            </div>
+            <span className="text-gray-600">•</span>
+            <span>Uşak Yarış Pisti • 10 Paddock Box</span>
           </div>
 
           <div className="text-center sm:text-right text-[11px] text-gray-400">
@@ -373,12 +553,16 @@ export default function App() {
       {selectedBike && (
         <BikeDetailModal
           bike={selectedBike}
+          garages={garages}
+          currentUser={currentUser}
           onClose={() => setSelectedBike(null)}
           onUpdateBike={handleUpdateBike}
           onOpenPrint={(bike) => {
             setPrintBikeTarget(bike);
             setActiveTab('print');
           }}
+          onOpenTrackEntry={(bike) => setTrackEntryBike(bike)}
+          onOpenAddEntries={(bike) => setAddEntriesBike(bike)}
         />
       )}
 
@@ -416,9 +600,29 @@ export default function App() {
         <AdminManagementModal
           admins={admins}
           currentUser={currentUser}
+          dbStatus={dbStatus}
           onClose={() => setIsAdminModalOpen(false)}
           onAddAdmin={handleAddAdmin}
           onDeleteAdmin={handleDeleteAdmin}
+          onClearAllTestBikes={handleClearAllTestBikes}
+        />
+      )}
+
+      {/* 6. Piste Giriş Yap Pop-up Modalı (1 veya çoklu gün/seans düşme) */}
+      {trackEntryBike && (
+        <TrackEntryModal
+          bike={trackEntryBike}
+          onClose={() => setTrackEntryBike(null)}
+          onConfirm={handleConfirmTrackEntry}
+        />
+      )}
+
+      {/* 7. Hak / Paket Yükle Pop-up Modalı */}
+      {addEntriesBike && (
+        <AddEntriesModal
+          bike={addEntriesBike}
+          onClose={() => setAddEntriesBike(null)}
+          onConfirm={handleConfirmAddEntries}
         />
       )}
 

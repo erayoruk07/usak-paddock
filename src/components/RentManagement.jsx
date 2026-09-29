@@ -4,14 +4,31 @@ import {
   CheckCircle2, 
   MessageCircle, 
   Phone, 
-  Play,
-  Plus,
-  Heart
+  Play, 
+  Plus, 
+  Heart,
+  Search,
+  X,
+  User,
+  Receipt
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import PaymentSummaryModal from './PaymentSummaryModal';
 
-export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
-  const [filter, setFilter] = useState('EXPIRED'); // 'EXPIRED' (Hakkı Bitenler) veya 'ALL'
+export default function RentManagement({ 
+  bikes, 
+  currentUser, 
+  onUpdateBike, 
+  onSelectBike,
+  onOpenTrackEntry,
+  onOpenAddEntries
+}) {
+  const isViewer = currentUser?.role === 'VIEWER';
+  
+  // Filtre: 'EXPIRED' (Hakkı Bitenler), 'ACTIVE' (Hakkı Olanlar), 'ALL' (Tümü)
+  const [filter, setFilter] = useState('EXPIRED');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBikeForPayment, setSelectedBikeForPayment] = useState(null);
 
   const expiredBikes = bikes.filter(b => (b.remainingEntries ?? 0) <= 0);
   const activeBikes = bikes.filter(b => (b.remainingEntries ?? 0) > 0);
@@ -25,7 +42,7 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
     window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
   };
 
-  // Piste Giriş Yap (-1 Hak Düş)
+  // Piste Giriş Yap (-1 Hak Düş) Fallback
   const handleUseEntry = (bike, e) => {
     e.stopPropagation();
     const remaining = bike.remainingEntries ?? 0;
@@ -46,12 +63,15 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
       ...bike,
       remainingEntries: remaining - 1,
       entryHistory: newHistory
+    }, {
+      actionType: 'TRACK_ENTRY',
+      note: `Piste giriş yapıldı (-1 Hak). Kalan Giriş: ${remaining - 1}`
     });
 
     alert(`🏎️ #${bike.raceNumber} (${bike.owner?.fullName}) için 1 Hak düşüldü. Kalan Giriş: ${remaining - 1}`);
   };
 
-  // Yeni Paket / Hak Yükle (+5 Giriş Hakkı)
+  // Yeni Paket / Hak Yükle (+5 Giriş Hakkı) Fallback
   const handleAddEntries = (bike, e) => {
     e.stopPropagation();
     const count = prompt(`${bike.owner?.fullName} için kaç giriş hakkı tanımlansın?`, '5');
@@ -60,14 +80,37 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
     confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
 
     const added = parseInt(count, 10);
-    onUpdateBike({
+    const updated = {
       ...bike,
       remainingEntries: (bike.remainingEntries ?? 0) + added,
       totalEntriesGranted: (bike.totalEntriesGranted ?? 0) + added
+    };
+
+    onUpdateBike(updated, {
+      actionType: 'ENTRIES_GRANTED',
+      note: `${added} seanslık yeni hak paketi tanımlandı. Kalan Giriş: ${updated.remainingEntries}`
     });
   };
 
-  const displayedBikes = filter === 'EXPIRED' ? expiredBikes : bikes;
+  // Filtreleme mantığı: Hem durum filtresi hem de isim/metin araması
+  let baseBikes = bikes;
+  if (filter === 'EXPIRED') baseBikes = expiredBikes;
+  else if (filter === 'ACTIVE') baseBikes = activeBikes;
+
+  const displayedBikes = baseBikes.filter(bike => {
+    if (!searchTerm.trim()) return true;
+    const q = searchTerm.toLowerCase();
+    return (
+      (bike.owner?.fullName && bike.owner.fullName.toLowerCase().includes(q)) ||
+      (bike.raceNumber && bike.raceNumber.toLowerCase().includes(q)) ||
+      (bike.garageNo && bike.garageNo.toLowerCase().includes(q)) ||
+      (bike.brand && bike.brand.toLowerCase().includes(q)) ||
+      (bike.model && bike.model.toLowerCase().includes(q)) ||
+      (bike.chassisNumber && bike.chassisNumber.toLowerCase().includes(q)) ||
+      (bike.owner?.phone && bike.owner.phone.includes(q)) ||
+      (bike.owner?.bloodType && bike.owner.bloodType.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="space-y-6">
@@ -80,8 +123,8 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
           onClick={() => setFilter('EXPIRED')}
           className={`cursor-pointer p-6 rounded-3xl border-2 transition shadow-xl ${
             filter === 'EXPIRED'
-              ? 'bg-red-950/60 border-red-500 shadow-red-950/50'
-              : 'bg-[#151922] border-gray-800'
+              ? 'bg-red-950/70 border-red-500 shadow-red-950/50 scale-[1.01]'
+              : 'bg-[#151922] border-gray-800 hover:border-gray-700'
           }`}
         >
           <div className="flex items-center justify-between text-red-400 font-black text-sm uppercase mb-1">
@@ -97,23 +140,23 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
             {expiredBikes.length} Sürücü
           </div>
           <div className="text-xs text-red-300 font-semibold mt-1">
-            Yeni paket yüklenmesi gerekiyor
+            Filtrelemek için tıklayın (Yeni paket bekleniyor)
           </div>
         </div>
 
         {/* Yeşil: Giriş Hakkı Olanlar */}
         <div 
-          onClick={() => setFilter('ALL')}
+          onClick={() => setFilter('ACTIVE')}
           className={`cursor-pointer p-6 rounded-3xl border-2 transition shadow-xl ${
-            filter === 'ALL'
-              ? 'bg-emerald-950/60 border-emerald-500 shadow-emerald-950/50'
-              : 'bg-[#151922] border-gray-800'
+            filter === 'ACTIVE'
+              ? 'bg-emerald-950/70 border-emerald-500 shadow-emerald-950/50 scale-[1.01]'
+              : 'bg-[#151922] border-gray-800 hover:border-gray-700'
           }`}
         >
           <div className="flex items-center justify-between text-emerald-400 font-black text-sm uppercase mb-1">
             <span className="flex items-center">
               <CheckCircle2 className="w-5 h-5 mr-1.5" />
-              Giriş Hakkı Olan Motorlar
+              Giriş Hakkı Olan Motorlar (Aktif)
             </span>
             <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-black">
               {activeBikes.length} Motor
@@ -123,35 +166,84 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
             {activeBikes.length} Aktif Sürücü
           </div>
           <div className="text-xs text-emerald-300 font-semibold mt-1">
-            Piste giriş yapabilir durumda
+            Filtrelemek için tıklayın (Piste giriş hakkı var)
           </div>
         </div>
 
       </div>
 
-      {/* LİSTE BAŞLIĞI VE FİLTRE BUTONLARI */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg sm:text-xl font-black text-white uppercase">
-          {filter === 'EXPIRED' ? '⚠️ Giriş Hakkı Biten Sürücüler' : '📋 Tüm Paddock Motorları'} ({displayedBikes.length})
-        </h2>
+      {/* ARAMA VE FİLTRE ÇUBUĞU */}
+      <div className="p-4 rounded-3xl bg-[#141822] border-2 border-gray-700 space-y-3">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+          
+          {/* İsim & Metin Arama Kutusu */}
+          <div className="relative flex-1 w-full">
+            <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Pilot adı (örn: Murat, Tolga), yarış no (#46), garaj adı, telefon..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-black border-2 border-gray-700 rounded-2xl pl-11 pr-10 py-2.5 text-sm text-white placeholder-gray-500 font-bold focus:outline-none focus:border-red-500"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-1"
+                title="Aramayı Temizle"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
 
-        <div className="flex space-x-2">
-          <button
-            onClick={() => setFilter('EXPIRED')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition ${
-              filter === 'EXPIRED' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400'
-            }`}
-          >
-            Hakkı Bitenler
-          </button>
-          <button
-            onClick={() => setFilter('ALL')}
-            className={`px-4 py-2 rounded-xl text-xs font-black transition ${
-              filter === 'ALL' ? 'bg-red-600 text-white' : 'bg-gray-800 text-gray-400'
-            }`}
-          >
-            Hepsi
-          </button>
+          {/* 3 Durum Filtre Butonu */}
+          <div className="flex items-center space-x-1.5 w-full sm:w-auto shrink-0">
+            <button
+              onClick={() => setFilter('EXPIRED')}
+              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
+                filter === 'EXPIRED'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-red-400 hover:bg-gray-700'
+              }`}
+            >
+              <AlertTriangle className="w-3.5 h-3.5 mr-1" />
+              <span>Hakkı Bitenler ({expiredBikes.length})</span>
+            </button>
+
+            <button
+              onClick={() => setFilter('ACTIVE')}
+              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
+                filter === 'ACTIVE'
+                  ? 'bg-emerald-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-emerald-400 hover:bg-gray-700'
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5 mr-1" />
+              <span>Hakkı Olanlar ({activeBikes.length})</span>
+            </button>
+
+            <button
+              onClick={() => setFilter('ALL')}
+              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
+                filter === 'ALL'
+                  ? 'bg-cyan-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              <span>Tümü ({bikes.length})</span>
+            </button>
+          </div>
+
+        </div>
+
+        {/* Sonuç Özeti Bilgisi */}
+        <div className="flex items-center justify-between text-xs text-gray-400 px-1 pt-1 border-t border-gray-800/80">
+          <span>
+            {filter === 'EXPIRED' ? '⚠️ Giriş hakkı bitenler listeleniyor' : filter === 'ACTIVE' ? '✅ Giriş hakkı olan aktif motorlar listeleniyor' : '📋 Tüm kayıtlar listeleniyor'}
+            {searchTerm && ` • "${searchTerm}" araması için ${displayedBikes.length} sonuç bulundu`}
+          </span>
+          <span className="font-bold text-gray-300">Toplam: {displayedBikes.length} Sürücü</span>
         </div>
       </div>
 
@@ -164,7 +256,8 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
           return (
             <div 
               key={bike.id}
-              className={`p-4 sm:p-5 rounded-3xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition shadow-lg ${
+              onClick={() => setSelectedBikeForPayment(bike)}
+              className={`p-4 sm:p-5 rounded-3xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition shadow-lg cursor-pointer group hover:border-cyan-500/80 hover:shadow-cyan-950/40 ${
                 isExpired 
                   ? 'bg-red-950/20 border-red-600/70' 
                   : 'bg-[#151922] border-gray-800'
@@ -177,13 +270,17 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
                 </div>
                 <div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-base sm:text-lg font-black text-white">
+                    <span className="text-base sm:text-lg font-black text-white group-hover:text-cyan-300 transition">
                       {bike.owner?.fullName}
                     </span>
                     {/* Kan Grubu Rozeti */}
                     <span className="px-2 py-0.5 rounded-lg bg-red-950 border border-red-700 text-red-400 font-black text-xs flex items-center">
                       <Heart className="w-3 h-3 mr-1 fill-red-500 text-red-500" />
                       {bike.owner?.bloodType || "Kan Grubu Yok"}
+                    </span>
+                    <span className="hidden sm:inline-flex items-center text-[10px] font-bold text-cyan-400 bg-cyan-950/80 px-2 py-0.5 rounded-md border border-cyan-800/80">
+                      <Receipt className="w-3 h-3 mr-1" />
+                      Ödeme Özeti
                     </span>
                   </div>
 
@@ -209,34 +306,54 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
 
               {/* Sağ: Aksiyon Butonları */}
               <div className="flex items-center space-x-2 shrink-0">
-                {/* Piste Giriş Yap (-1 Düş) */}
-                <button
-                  onClick={(e) => handleUseEntry(bike, e)}
-                  disabled={isExpired}
-                  className={`px-4 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 shadow ${
-                    isExpired
-                      ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                      : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
-                  }`}
-                >
-                  <Play className="w-4 h-4 fill-current" />
-                  <span>Piste Gir (-1)</span>
-                </button>
+                {!isViewer ? (
+                  <>
+                    {/* Piste Giriş Yap Butonu -> TrackEntryModal */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenTrackEntry) onOpenTrackEntry(bike);
+                        else handleUseEntry(bike, e);
+                      }}
+                      disabled={isExpired}
+                      className={`px-4 py-3 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 shadow transition ${
+                        isExpired
+                          ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                          : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white active:scale-95 shadow-md shadow-red-600/30'
+                      }`}
+                    >
+                      <Play className="w-4 h-4 fill-current" />
+                      <span>Piste Gir</span>
+                    </button>
 
-                {/* + Hak Yükle */}
-                <button
-                  onClick={(e) => handleAddEntries(bike, e)}
-                  className="px-4 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs sm:text-sm flex items-center justify-center space-x-1 shadow"
-                  title="5 Seanslık Paket Yükle"
-                >
-                  <Plus className="w-4 h-4" />
-                  <span>Hak Yükle</span>
-                </button>
+                    {/* Hak Yükle Butonu -> AddEntriesModal */}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onOpenAddEntries) onOpenAddEntries(bike);
+                        else handleAddEntries(bike, e);
+                      }}
+                      className="px-4 py-3 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs sm:text-sm flex items-center justify-center space-x-1 shadow"
+                      title="Yeni Hak / Ödeme Yükle"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Hak Yükle</span>
+                    </button>
+                  </>
+                ) : (
+                  <div className="px-3.5 py-2.5 rounded-2xl bg-gray-900 border border-gray-800 text-xs font-bold text-gray-400 flex items-center space-x-1.5">
+                    <span>👁️</span>
+                    <span>Sadece Görüntüleme</span>
+                  </div>
+                )}
 
                 {/* WhatsApp */}
                 {isExpired && (
                   <button
-                    onClick={() => sendWhatsAppReminder(bike)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sendWhatsAppReminder(bike);
+                    }}
                     className="p-3 rounded-2xl bg-gray-800 hover:bg-gray-700 text-emerald-400 border border-gray-700 transition"
                     title="WhatsApp'tan Hak Bitti Mesajı At"
                   >
@@ -255,6 +372,23 @@ export default function RentManagement({ bikes, onUpdateBike, onSelectBike }) {
           </div>
         )}
       </div>
+
+      {/* ÖDEME VE GİRİŞ HAKLARI DETAY MODALI */}
+      {selectedBikeForPayment && (
+        <PaymentSummaryModal
+          bike={selectedBikeForPayment}
+          currentUser={currentUser}
+          onClose={() => setSelectedBikeForPayment(null)}
+          onOpenAddEntries={(b) => {
+            setSelectedBikeForPayment(null);
+            if (onOpenAddEntries) onOpenAddEntries(b);
+          }}
+          onOpenTrackEntry={(b) => {
+            setSelectedBikeForPayment(null);
+            if (onOpenTrackEntry) onOpenTrackEntry(b);
+          }}
+        />
+      )}
 
     </div>
   );

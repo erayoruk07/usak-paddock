@@ -116,24 +116,42 @@ export default function Navbar({
               )}
             </button>
 
-            {/* Yeni Motor Ekle */}
-            <button
-              onClick={onOpenAddModal}
-              className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl shadow-md transition transform active:scale-95"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span className="hidden sm:inline">Yeni Motor</span>
-            </button>
+            {/* Yeni Motor Ekle - Sadece ADMIN görebilir */}
+            {currentUser?.role !== 'VIEWER' && (
+              <button
+                onClick={onOpenAddModal}
+                className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl shadow-md transition transform active:scale-95"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span className="hidden sm:inline">Yeni Motor</span>
+              </button>
+            )}
 
-            {/* Admin Yönetimi */}
-            <button
-              onClick={onOpenAdminModal}
-              className="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-200 border border-gray-700 font-bold text-xs flex items-center space-x-1.5 transition"
-              title="Yetkili Hesapları Yönet"
-            >
-              <Shield className="w-3.5 h-3.5 text-cyan-400" />
-              <span className="hidden md:inline">{currentUser?.username || 'Admin'}</span>
-            </button>
+            {/* Kullanıcı / Admin Yönetimi Butonu */}
+            {currentUser?.role === 'ADMIN' ? (
+              <button
+                onClick={onOpenAdminModal}
+                className="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-200 border border-cyan-800/80 font-bold text-xs flex items-center space-x-1.5 transition"
+                title="Yetkili Hesapları Yönet (Admin)"
+              >
+                <Shield className="w-3.5 h-3.5 text-cyan-400" />
+                <span className="hidden md:inline">{currentUser?.name || currentUser?.username}</span>
+                <span className="px-1.5 py-0.5 rounded bg-red-950 text-red-400 text-[9px] font-black border border-red-800 hidden sm:inline">
+                  Yönetici
+                </span>
+              </button>
+            ) : (
+              <div 
+                className="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-gray-900 text-gray-300 border border-gray-800 font-bold text-xs flex items-center space-x-1.5 cursor-default"
+                title="Sadece Görüntüleme Yetkisi"
+              >
+                <span className="text-cyan-400 text-sm">👁️</span>
+                <span className="hidden md:inline">{currentUser?.name || currentUser?.username}</span>
+                <span className="px-1.5 py-0.5 rounded bg-cyan-950 text-cyan-400 text-[9px] font-black border border-cyan-800">
+                  Gözlemci
+                </span>
+              </div>
+            )}
 
             {/* Çıkış Yap */}
             <button

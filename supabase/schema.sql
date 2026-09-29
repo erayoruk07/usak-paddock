@@ -1,27 +1,39 @@
 -- ============================================================
 -- UŞAK YARIŞ PİSTİ PADDOCK GARAJ YÖNETİMİ
--- Supabase SQL Şeması ve Tabloları
+-- Supabase SQL Şeması, İndeksler ve Canlı Log Sistemi
 -- ============================================================
 
--- 1. YETKİLİLER (ADMINS) TABLOSU
+-- ============================================================
+-- ⚡ MİGRASYON BÖLÜMÜ (Daha önce eski şemayı çalıştırdıysanız):
+-- Supabase SQL Editor'da bunu tek başına çalıştırabilirsiniz:
+-- ============================================================
+ALTER TABLE IF EXISTS public.admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'ADMIN';
+
+-- ============================================================
+-- 1. YETKİLİLER VE KULLANICILAR (ADMINS) TABLOSU
+-- ============================================================
 CREATE TABLE IF NOT EXISTS public.admins (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT,
+    role TEXT NOT NULL DEFAULT 'VIEWER' CHECK (role IN ('ADMIN', 'VIEWER')),
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Varsayılan ilk yöneticiyi ekleyelim
-INSERT INTO public.admins (username, password, name)
-VALUES ('admin', '123', 'Pist Yöneticisi')
-ON CONFLICT (username) DO NOTHING;
+INSERT INTO public.admins (id, username, password, name, role)
+VALUES ('admin-1', 'admin', '123', 'Pist Yöneticisi', 'ADMIN')
+ON CONFLICT (username) DO UPDATE 
+SET role = 'ADMIN' WHERE public.admins.username = 'admin';
 
 
+-- ============================================================
 -- 2. 10 PADDOCK BOX GARAJ TABLOSU
+-- ============================================================
 CREATE TABLE IF NOT EXISTS public.garages (
-    id TEXT PRIMARY KEY, -- örn: 'box-1', 'box-2'
-    box_number INT NOT NULL,
+    id TEXT PRIMARY KEY, -- 'box-1', 'box-2' ... 'box-10'
+    box_number INT NOT NULL UNIQUE,
     name TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT now()
 );
@@ -41,7 +53,9 @@ INSERT INTO public.garages (id, box_number, name) VALUES
 ON CONFLICT (id) DO NOTHING;
 
 
+-- ============================================================
 -- 3. MOTORLAR VE SÜRÜCÜLER TABLOSU
+-- ============================================================
 CREATE TABLE IF NOT EXISTS public.bikes (
     id TEXT PRIMARY KEY, -- örn: 'USAK-01'
     garage_id TEXT REFERENCES public.garages(id) ON DELETE SET NULL,
@@ -76,16 +90,53 @@ CREATE TABLE IF NOT EXISTS public.bikes (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Hızlı aramalar için indeksler
+
+-- ============================================================
+-- 4. PİST GİRİŞ VE SİSTEM İŞLEM LOGLARI (AUDIT & ENTRY LOGS)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS public.entry_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    bike_id TEXT,
+    race_number TEXT,
+    driver_name TEXT,
+    garage_no TEXT,
+    action_type TEXT NOT NULL, -- 'TRACK_ENTRY', 'ENTRIES_GRANTED', 'BIKE_ADDED', 'BIKE_MOVED', 'USER_CREATED', 'USER_DELETED'
+    note TEXT,
+    remaining_entries INT,
+    performed_by TEXT, -- işlemi yapan kullanıcı adı
+    created_at TIMESTAMPTZ DEFAULT now()
+);
+
+
+-- ============================================================
+-- 5. PERFORMANS VE ARAMA İNDEKSLERİ (B-TREE INDEXES)
+-- ============================================================
+CREATE INDEX IF NOT EXISTS idx_admins_username ON public.admins(username);
+CREATE INDEX IF NOT EXISTS idx_admins_role ON public.admins(role);
+
 CREATE INDEX IF NOT EXISTS idx_bikes_garage_id ON public.bikes(garage_id);
 CREATE INDEX IF NOT EXISTS idx_bikes_race_number ON public.bikes(race_number);
 CREATE INDEX IF NOT EXISTS idx_bikes_owner_name ON public.bikes(owner_name);
+CREATE INDEX IF NOT EXISTS idx_bikes_owner_phone ON public.bikes(owner_phone);
+CREATE INDEX IF NOT EXISTS idx_bikes_chassis ON public.bikes(chassis_number);
+CREATE INDEX IF NOT EXISTS idx_bikes_remaining ON public.bikes(remaining_entries);
+CREATE INDEX IF NOT EXISTS idx_bikes_blood_type ON public.bikes(blood_type);
 
--- RLS (Row Level Security) Açma (Geliştirme aşaması için herkese okuma/yazma izni)
+CREATE INDEX IF NOT EXISTS idx_entry_logs_bike_id ON public.entry_logs(bike_id);
+CREATE INDEX IF NOT EXISTS idx_entry_logs_created_at ON public.entry_logs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_entry_logs_action ON public.entry_logs(action_type);
+
+
+-- ============================================================
+-- 6. RLS (ROW LEVEL SECURITY) POLİTİKALARI
+-- ============================================================
 ALTER TABLE public.admins ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.garages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bikes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.entry_logs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Herkes adminleri okuyabilir/yazabilir" ON public.admins FOR ALL USING (true);
-CREATE POLICY "Herkes garajları okuyabilir/yazabilir" ON public.garages FOR ALL USING (true);
-CREATE POLICY "Herkes motorları okuyabilir/yazabilir" ON public.bikes FOR ALL USING (true);
+-- Anon/Authenticated istemci tam okuma & yazma (Pist Ofis Operasyonu)
+CREATE POLICY "Admins okuma/yazma politikası" ON public.admins FOR ALL USING (true);
+CREATE POLICY "Garajlar okuma/yazma politikası" ON public.garages FOR ALL USING (true);
+CREATE POLICY "Motorlar okuma/yazma politikası" ON public.bikes FOR ALL USING (true);
+CREATE POLICY "Loglar okuma/yazma politikası" ON public.entry_logs FOR ALL USING (true);

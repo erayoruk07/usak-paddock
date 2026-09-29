@@ -1,17 +1,18 @@
-// Uşak Yarış Pisti - Yetkili (Admin) Hesap Yönetimi
+// Uşak Yarış Pisti - Yetkili (Admin & Viewer) Hesap Yönetimi
 
 export const INITIAL_ADMINS = [
   {
     id: "admin-1",
     username: "admin",
-    password: "123", // Kullanıcı için kolay ve pratik
+    password: "123",
     name: "Pist Yöneticisi",
+    role: "ADMIN", // 'ADMIN' (Tam Yetkili) veya 'VIEWER' (Sadece Görüntüleme)
     createdAt: "2026-09-28"
   }
 ];
 
-export const STORAGE_KEY_ADMINS = "usak_pist_admins_v1";
-export const STORAGE_KEY_AUTH = "usak_pist_current_user_v1";
+export const STORAGE_KEY_ADMINS = "usak_pist_admins_v2";
+export const STORAGE_KEY_AUTH = "usak_pist_current_user_v2";
 
 export function loadAdmins() {
   try {

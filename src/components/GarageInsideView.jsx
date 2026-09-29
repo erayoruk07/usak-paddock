@@ -22,14 +22,18 @@ export default function GarageInsideView({
   garage, 
   bikes, 
   allGarages,
+  currentUser,
   onBack, 
   onSelectBike, 
   onShowQR, 
   onQuickWhatsApp, 
   onAddNewBikeToThisGarage,
   onMoveBike,
-  onUpdateBike
+  onUpdateBike,
+  onOpenTrackEntry,
+  onOpenAddEntries
 }) {
+  const isViewer = currentUser?.role === 'VIEWER';
   const [transferringBike, setTransferringBike] = useState(null);
   const [targetGarageId, setTargetGarageId] = useState('');
 
@@ -65,7 +69,10 @@ export default function GarageInsideView({
       entryHistory: newHistory
     };
 
-    onUpdateBike(updated);
+    onUpdateBike(updated, {
+      actionType: 'TRACK_ENTRY',
+      note: `Piste giriş yapıldı (-1 Hak). Kalan Hak: ${updated.remainingEntries}`
+    });
     alert(`🏎️ #${bike.raceNumber} (${bike.owner?.fullName}) için 1 Pist Giriş Hakkı düşüldü. Kalan Hak: ${updated.remainingEntries}`);
   };
 
@@ -84,7 +91,10 @@ export default function GarageInsideView({
       totalEntriesGranted: (bike.totalEntriesGranted ?? 0) + added
     };
 
-    onUpdateBike(updated);
+    onUpdateBike(updated, {
+      actionType: 'ENTRIES_GRANTED',
+      note: `${added} seanslık yeni hak paketi yüklendi. Kalan Hak: ${updated.remainingEntries}`
+    });
   };
 
   return (
@@ -110,14 +120,16 @@ export default function GarageInsideView({
           </div>
         </div>
 
-        {/* Sağ: Yeni Motor Ekle */}
-        <button
-          onClick={() => onAddNewBikeToThisGarage(garage)}
-          className="flex items-center space-x-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black text-sm sm:text-base shadow-lg transition"
-        >
-          <PlusCircle className="w-5 h-5" />
-          <span>Bu Garaja Motor Ekle</span>
-        </button>
+        {/* Sağ: Yeni Motor Ekle - Sadece Yönetici */}
+        {!isViewer && (
+          <button
+            onClick={() => onAddNewBikeToThisGarage(garage)}
+            className="flex items-center space-x-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black text-sm sm:text-base shadow-lg transition"
+          >
+            <PlusCircle className="w-5 h-5" />
+            <span>Bu Garaja Motor Ekle</span>
+          </button>
+        )}
 
       </div>
 
@@ -213,31 +225,46 @@ export default function GarageInsideView({
                     </span>
                   </div>
 
-                  <div className="flex gap-2">
-                    {/* -1 Hak Düş Butonu */}
-                    <button
-                      onClick={(e) => handleUseEntry(bike, e)}
-                      disabled={isExpired}
-                      className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 shadow transition ${
-                        isExpired 
-                          ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
-                          : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95'
-                      }`}
-                    >
-                      <Play className="w-3.5 h-3.5 fill-current" />
-                      <span>Piste Giriş Yap (-1)</span>
-                    </button>
+                  {!isViewer ? (
+                    <div className="flex gap-2">
+                      {/* Piste Giriş Yap Butonu -> TrackEntryModal Açar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenTrackEntry) onOpenTrackEntry(bike);
+                          else handleUseEntry(bike, e);
+                        }}
+                        disabled={isExpired}
+                        className={`flex-1 py-2.5 px-3 rounded-xl font-black text-xs flex items-center justify-center space-x-1.5 shadow transition ${
+                          isExpired 
+                            ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                            : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white active:scale-95 shadow-md shadow-red-600/30'
+                        }`}
+                      >
+                        <Play className="w-3.5 h-3.5 fill-current" />
+                        <span>Piste Giriş Yap</span>
+                      </button>
 
-                    {/* + Hak Ekle / Bakiye Yükle */}
-                    <button
-                      onClick={(e) => handleAddEntries(bike, e)}
-                      className="px-3 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs flex items-center space-x-1 shadow"
-                      title="Yeni Hak / Ödeme Yükle"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Hak Yükle</span>
-                    </button>
-                  </div>
+                      {/* Hak Yükle Butonu -> AddEntriesModal Açar */}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (onOpenAddEntries) onOpenAddEntries(bike);
+                          else handleAddEntries(bike, e);
+                        }}
+                        className="px-3.5 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs flex items-center space-x-1 shadow"
+                        title="Yeni Hak / Ödeme Yükle"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Hak Yükle</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="py-2 px-3 rounded-xl bg-gray-900 border border-gray-800 text-center text-xs font-bold text-gray-400 flex items-center justify-center space-x-1.5">
+                      <span>👁️</span>
+                      <span>Gözlemci Modu • Sadece Görüntüleme</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Takılı Parçalar Listesi */}
@@ -272,14 +299,16 @@ export default function GarageInsideView({
                     <QrCode className="w-5 h-5" />
                   </button>
 
-                  <button
-                    onClick={() => setTransferringBike(bike)}
-                    className="px-3 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs border border-gray-700 transition"
-                    title="Başka Garaja Taşı"
-                  >
-                    <ArrowRightLeft className="w-4 h-4 inline mr-1" />
-                    Taşı
-                  </button>
+                  {!isViewer && (
+                    <button
+                      onClick={() => setTransferringBike(bike)}
+                      className="px-3 py-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs border border-gray-700 transition"
+                      title="Başka Garaja Taşı"
+                    >
+                      <ArrowRightLeft className="w-4 h-4 inline mr-1" />
+                      Taşı
+                    </button>
+                  )}
 
                   <button
                     onClick={() => onSelectBike(bike)}
@@ -301,14 +330,16 @@ export default function GarageInsideView({
             <Bike className="w-16 h-16 text-gray-600 mx-auto" />
             <div className="text-xl font-black text-white">Bu Garaj Şu An Boş</div>
             <p className="text-sm text-gray-400">
-              {garage.name} için henüz motor atanmadı. Hemen yeni bir motor kaydedebilirsiniz.
+              {garage.name} için henüz motor atanmadı.
             </p>
-            <button
-              onClick={() => onAddNewBikeToThisGarage(garage)}
-              className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-base shadow-lg"
-            >
-              + Bu Garaja Motor Ekle
-            </button>
+            {!isViewer && (
+              <button
+                onClick={() => onAddNewBikeToThisGarage(garage)}
+                className="px-6 py-3 rounded-2xl bg-red-600 hover:bg-red-500 text-white font-black text-base shadow-lg"
+              >
+                + Bu Garaja Motor Ekle
+              </button>
+            )}
           </div>
         )}
       </div>
