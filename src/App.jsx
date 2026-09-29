@@ -49,6 +49,7 @@ import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
 import TrackEntryModal from './components/TrackEntryModal';
 import AddEntriesModal from './components/AddEntriesModal';
+import SupabaseConfigModal from './components/SupabaseConfigModal';
 
 export default function App() {
   // Giriş ve Yetkili Durumu
@@ -70,6 +71,7 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [isDbConfigOpen, setIsDbConfigOpen] = useState(false);
   const [printBikeTarget, setPrintBikeTarget] = useState(null);
   const [addBikeTargetGarageId, setAddBikeTargetGarageId] = useState('box-1');
   
@@ -127,6 +129,89 @@ export default function App() {
   useEffect(() => {
     saveAdmins(admins);
   }, [admins]);
+
+  // Mobil & Tarayıcı Geri Tuşu Kontrolü (Boş ekrana düşmeyi tamamen engeller)
+  useEffect(() => {
+    const handlePopState = () => {
+      // 1. Açık herhangi bir modal varsa kapat
+      if (isDbConfigOpen) {
+        setIsDbConfigOpen(false);
+        return;
+      }
+      if (selectedBike) {
+        setSelectedBike(null);
+        return;
+      }
+      if (trackEntryBike) {
+        setTrackEntryBike(null);
+        return;
+      }
+      if (addEntriesBike) {
+        setAddEntriesBike(null);
+        return;
+      }
+      if (isAddModalOpen) {
+        setIsAddModalOpen(false);
+        return;
+      }
+      if (isAdminModalOpen) {
+        setIsAdminModalOpen(false);
+        return;
+      }
+      if (isScannerOpen) {
+        setIsScannerOpen(false);
+        return;
+      }
+      if (isNotificationOpen) {
+        setIsNotificationOpen(false);
+        return;
+      }
+
+      // 2. Bir garajın içindeyse, garajdan çıkıp 10 Paddock Box koridoruna dön
+      if (currentGarage) {
+        setCurrentGarage(null);
+        return;
+      }
+
+      // 3. Başka bir sekmedeyse, ana koridora dön
+      if (activeTab !== 'pitlane') {
+        setActiveTab('pitlane');
+        return;
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [
+    isDbConfigOpen,
+    selectedBike, 
+    trackEntryBike, 
+    addEntriesBike, 
+    isAddModalOpen, 
+    isAdminModalOpen, 
+    isScannerOpen, 
+    isNotificationOpen, 
+    currentGarage, 
+    activeTab
+  ]);
+
+  // Garaj Açma (Mobil geçmişe ekler)
+  const handleOpenGarage = (garage) => {
+    try {
+      window.history.pushState({ view: 'garage', garageId: garage.id }, '');
+    } catch {}
+    setCurrentGarage(garage);
+  };
+
+  // Garajdan Geri Çıkma
+  const handleBackFromGarage = () => {
+    setCurrentGarage(null);
+    try {
+      if (window.history.state?.view === 'garage') {
+        window.history.back();
+      }
+    } catch {}
+  };
 
   // URL Hash kontrolü
   useEffect(() => {
@@ -391,6 +476,8 @@ export default function App() {
         currentUser={currentUser}
         onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onLogout={handleLogout}
+        dbStatus={dbStatus}
+        onOpenDbConfig={() => setIsDbConfigOpen(true)}
       />
 
       {/* Ana Gövde */}
@@ -403,7 +490,7 @@ export default function App() {
               <PitLaneGarages 
                 garages={garages} 
                 bikes={bikes} 
-                onOpenGarage={(garage) => setCurrentGarage(garage)} 
+                onOpenGarage={handleOpenGarage} 
               />
             ) : (
               <GarageInsideView 
@@ -411,7 +498,7 @@ export default function App() {
                 bikes={bikes}
                 allGarages={garages}
                 currentUser={currentUser}
-                onBack={() => setCurrentGarage(null)}
+                onBack={handleBackFromGarage}
                 onSelectBike={(b) => setSelectedBike(b)}
                 onShowQR={(b) => setSelectedBike({ ...b, initialTab: 'qr' })}
                 onQuickWhatsApp={handleQuickWhatsApp}
@@ -623,6 +710,14 @@ export default function App() {
           bike={addEntriesBike}
           onClose={() => setAddEntriesBike(null)}
           onConfirm={handleConfirmAddEntries}
+        />
+      )}
+
+      {/* 8. Canlı Bulut Veritabanı (Supabase) ve Cihaz Senkronizasyon Modalı */}
+      {isDbConfigOpen && (
+        <SupabaseConfigModal
+          dbStatus={dbStatus}
+          onClose={() => setIsDbConfigOpen(false)}
         />
       )}
 

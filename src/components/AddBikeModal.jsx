@@ -11,14 +11,18 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
   const brandList = Object.keys(TURKEY_MOTORCYCLE_DATABASE);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Combobox özel yazma geçişleri (Mobil uyumlu)
+  const [isCustomBrand, setIsCustomBrand] = useState(false);
+  const [isCustomModel, setIsCustomModel] = useState(false);
+
   const [formData, setFormData] = useState({
     raceNumber: '',
     garageId: defaultGarageId || 'box-1',
     brand: 'Yamaha',
-    model: '',
+    model: 'YZF-R6',
     year: 2024,
-    engineSize: '', // Boş
-    chassisNumber: '', // Motor Şasi Numarası
+    engineSize: '',
+    chassisNumber: '',
     color: '',
     photoUrl: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&w=1000&q=80',
     ownerName: '',
@@ -27,8 +31,6 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
     emergencyName: '',
     emergencyRelation: 'Eşi',
     emergencyPhone: '0 (',
-    paymentAmount: 7000,
-    totalEntriesGranted: 5,
     initialParts: 'Capit Lastik Isıtıcı, AIM Solo 2 Laptimer, Koruma Demiri'
   });
 
@@ -51,9 +53,9 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (isSubmitting) return; // Çift tıklama / çift kayıt engeli!
+    if (isSubmitting) return;
 
-    if (!formData.model || !formData.ownerName) {
+    if (!formData.model?.trim() || !formData.ownerName?.trim()) {
       alert('Lütfen motor modelini ve pilot adını giriniz.');
       return;
     }
@@ -76,24 +78,24 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
       garageId: targetGarage ? targetGarage.id : 'box-1',
       garageNo: targetGarage ? targetGarage.name : 'Paddock Box 1',
       raceNumber: formData.raceNumber || '99',
-      brand: formData.brand,
-      model: formData.model,
+      brand: formData.brand.trim(),
+      model: formData.model.trim(),
       year: Number(formData.year) || 2024,
-      engineSize: formData.engineSize || '',
-      chassisNumber: formData.chassisNumber || '',
-      color: formData.color || 'Yarış Tasarımı',
+      engineSize: formData.engineSize?.trim() || '',
+      chassisNumber: formData.chassisNumber?.trim() || '',
+      color: formData.color?.trim() || 'Yarış Tasarımı',
       photoUrl: formData.photoUrl,
       owner: {
-        fullName: formData.ownerName,
-        phone: formData.ownerPhone,
+        fullName: formData.ownerName.trim(),
+        phone: formData.ownerPhone.trim(),
         bloodType: formData.bloodType,
-        emergencyName: formData.emergencyName || '',
+        emergencyName: formData.emergencyName?.trim() || '',
         emergencyRelation: formData.emergencyRelation || 'Eşi',
-        emergencyPhone: formData.emergencyPhone || ''
+        emergencyPhone: formData.emergencyPhone?.trim() || ''
       },
-      paymentAmount: Number(formData.paymentAmount) || 7000,
-      remainingEntries: Number(formData.totalEntriesGranted) || 5,
-      totalEntriesGranted: Number(formData.totalEntriesGranted) || 5,
+      paymentAmount: 0,
+      remainingEntries: 0, // Pist giriş hakkı sonradan hak yükle pop-up'ından eklenecektir
+      totalEntriesGranted: 0,
       entryHistory: [],
       equippedParts: partsArray
     };
@@ -114,9 +116,9 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-white uppercase tracking-wider">
-                Yeni Motosiklet & Sürücü Kaydı
+                Yeni Motosiklet &amp; Sürücü Kaydı
               </h3>
-              <p className="text-xs text-gray-400">Paddock Box garajına yeni araç ve bakiye tanımlama</p>
+              <p className="text-xs text-gray-400">Paddock Box garajına araç ve ruhsat tanımlama</p>
             </div>
           </div>
 
@@ -180,44 +182,94 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
             </div>
           </div>
 
-          {/* 2. Marka & Model (Combobox) */}
+          {/* 2. Marka & Model (Mobil Uyumlu Combobox) */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Marka Seçimi */}
             <div>
-              <label className="block text-gray-300 font-bold mb-1">
-                Marka (Listeden Seçin veya Yazın)
-              </label>
-              <input
-                list="brands-list"
-                value={formData.brand}
-                onChange={(e) => setFormData({ ...formData, brand: e.target.value, model: '' })}
-                placeholder="Marka seçin veya yazın..."
-                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
-                required
-              />
-              <datalist id="brands-list">
-                {brandList.map(b => (
-                  <option key={b} value={b} />
-                ))}
-              </datalist>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-gray-300 font-bold">
+                  Motosiklet Markası
+                </label>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsCustomBrand(!isCustomBrand);
+                    if (!isCustomBrand) setIsCustomModel(true);
+                  }}
+                  className="text-[10px] text-cyan-400 font-bold hover:underline"
+                >
+                  {isCustomBrand ? "← Listeden Seç" : "+ Elle Yaz"}
+                </button>
+              </div>
+
+              {isCustomBrand ? (
+                <input
+                  type="text"
+                  value={formData.brand}
+                  onChange={(e) => setFormData({ ...formData, brand: e.target.value })}
+                  placeholder="Marka adı yazın (örn: Ducati...)"
+                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-red-500 focus:outline-none"
+                  required
+                />
+              ) : (
+                <select
+                  value={formData.brand}
+                  onChange={(e) => {
+                    const b = e.target.value;
+                    const models = TURKEY_MOTORCYCLE_DATABASE[b] || [];
+                    setFormData({ 
+                      ...formData, 
+                      brand: b, 
+                      model: models.length > 0 ? models[0] : '' 
+                    });
+                    setIsCustomModel(false);
+                  }}
+                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-red-500 focus:outline-none"
+                >
+                  {brandList.map(b => (
+                    <option key={b} value={b}>{b}</option>
+                  ))}
+                </select>
+              )}
             </div>
 
+            {/* Model Seçimi */}
             <div>
-              <label className="block text-gray-300 font-bold mb-1">
-                Model (Listeden Seçin veya Yazın)
-              </label>
-              <input
-                list="models-list"
-                value={formData.model}
-                onChange={(e) => setFormData({ ...formData, model: e.target.value })}
-                placeholder="Model seçin veya yazın..."
-                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
-                required
-              />
-              <datalist id="models-list">
-                {availableModels.map(m => (
-                  <option key={m} value={m} />
-                ))}
-              </datalist>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-gray-300 font-bold">
+                  Model
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsCustomModel(!isCustomModel)}
+                  className="text-[10px] text-cyan-400 font-bold hover:underline"
+                >
+                  {isCustomModel ? "← Listeden Seç" : "+ Elle Yaz"}
+                </button>
+              </div>
+
+              {isCustomModel || availableModels.length === 0 ? (
+                <input
+                  type="text"
+                  value={formData.model}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                  placeholder="Model adı yazın (örn: YZF-R6, Panigale V4...)"
+                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-red-500 focus:outline-none"
+                  required
+                />
+              ) : (
+                <select
+                  value={formData.model}
+                  onChange={(e) => setFormData({ ...formData, model: e.target.value })}
+                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs focus:border-red-500 focus:outline-none"
+                  required
+                >
+                  <option value="">-- Model Seçin --</option>
+                  {availableModels.map(m => (
+                    <option key={m} value={m}>{m}</option>
+                  ))}
+                </select>
+              )}
             </div>
           </div>
 
@@ -229,23 +281,10 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
               </label>
               <input
                 type="text"
-                placeholder="örn: 600 cc (İsteğe bağlı)"
+                placeholder="örn: 599 cc, 1000 cc"
                 value={formData.engineSize}
                 onChange={(e) => setFormData({ ...formData, engineSize: e.target.value })}
-                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-semibold text-xs"
-              />
-            </div>
-
-            <div>
-              <label className="block text-gray-300 font-bold mb-1">
-                Motor Şasi Numarası
-              </label>
-              <input
-                type="text"
-                placeholder="Ruhsat şasi no (VIN)"
-                value={formData.chassisNumber}
-                onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value })}
-                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-xs uppercase"
+                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white text-xs"
               />
             </div>
 
@@ -260,47 +299,76 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                 className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
               />
             </div>
+
+            <div>
+              <label className="block text-gray-300 font-bold mb-1">
+                Motor Şasi No (VIN)
+              </label>
+              <input
+                type="text"
+                placeholder="örn: JYARJ27E0001046"
+                value={formData.chassisNumber}
+                onChange={(e) => setFormData({ ...formData, chassisNumber: e.target.value.toUpperCase() })}
+                className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-mono text-xs"
+              />
+            </div>
           </div>
 
-          {/* 4. Sürücü & Kan Grubu ve Telefon */}
-          <div className="p-4 rounded-2xl bg-gray-900 border-2 border-gray-800 space-y-3">
-            <div className="font-black text-orange-400 uppercase tracking-wider flex items-center">
-              <User className="w-4 h-4 mr-1.5" /> Sürücü & Pilot Bilgileri
+          {/* Renk */}
+          <div>
+            <label className="block text-gray-300 font-bold mb-1">
+              Renk / Kaplama Tasarımı
+            </label>
+            <input
+              type="text"
+              placeholder="örn: Yarış Mavisi / Karbon, Monster Energy vb."
+              value={formData.color}
+              onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+              className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white text-xs"
+            />
+          </div>
+
+          {/* 4. Sürücü ve Acil Durum Bilgileri */}
+          <div className="p-4 rounded-2xl bg-gray-900/90 border-2 border-gray-800 space-y-3">
+            <div className="font-black text-cyan-400 uppercase tracking-wider flex items-center">
+              <User className="w-4 h-4 mr-1.5" />
+              Sürücü / Pilot Bilgileri
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">Pilot Adı Soyadı</label>
+                <label className="block text-gray-400 mb-1">Pilot Adı Soyadı</label>
                 <input
                   type="text"
-                  placeholder="Pilot Adı Soyadı"
+                  placeholder="Pilot tam adı"
                   value={formData.ownerName}
                   onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
+                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white text-xs"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-gray-400 mb-1 font-bold">Telefon Numarası</label>
+                <label className="block text-gray-400 mb-1">Telefon Numarası</label>
                 <input
                   type="tel"
                   placeholder="0 (5XX) XXX XX XX"
                   value={formData.ownerPhone}
                   onChange={(e) => handlePhoneChange('ownerPhone', e.target.value)}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-emerald-400 font-bold font-mono text-xs"
+                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-emerald-400 font-mono text-xs"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-red-400 mb-1 font-black flex items-center">
-                  <Heart className="w-3 h-3 mr-1 fill-red-500 text-red-500" /> Kan Grubu
+                <label className="block text-gray-400 mb-1 flex items-center">
+                  <Heart className="w-3 h-3 mr-1 text-red-500 fill-red-500" />
+                  Kan Grubu
                 </label>
                 <select
                   value={formData.bloodType}
                   onChange={(e) => setFormData({ ...formData, bloodType: e.target.value })}
-                  className="w-full bg-black border-2 border-red-900/60 rounded-xl px-3 py-2 text-red-400 font-black text-xs"
+                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-red-400 font-bold text-xs"
                 >
                   {BLOOD_TYPES.map(bt => (
                     <option key={bt} value={bt}>{bt}</option>
@@ -310,8 +378,8 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
             </div>
 
             {/* Acil Durum Yakını */}
-            <div className="pt-2 border-t border-gray-800">
-              <div className="text-[11px] font-bold text-red-400 mb-2 flex items-center">
+            <div className="pt-2 border-t border-gray-800 space-y-2">
+              <div className="text-[11px] font-bold text-red-400 flex items-center">
                 <ShieldAlert className="w-3.5 h-3.5 mr-1" />
                 Acil Durumda Ulaşılacak Kişi:
               </div>
@@ -356,42 +424,10 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
 
           </div>
 
-          {/* 5. Pist Giriş Hakkı ve Ödeme Paketi */}
-          <div className="p-4 rounded-2xl bg-amber-950/20 border-2 border-amber-800/40 space-y-2">
-            <div className="font-black text-amber-400 uppercase tracking-wider">
-              🎟️ Pist Giriş Hakkı & Ödeme Paketi
-            </div>
-            <p className="text-[11px] text-gray-400">
-              Sürücü her piste geldiğinde 1 hak düşülür.
-            </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-              <div>
-                <label className="block text-gray-300 font-bold mb-1">Ödenen Tutar (TL)</label>
-                <input
-                  type="number"
-                  value={formData.paymentAmount}
-                  onChange={(e) => setFormData({ ...formData, paymentAmount: e.target.value })}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-amber-400 font-black text-sm"
-                />
-              </div>
-
-              <div>
-                <label className="block text-gray-300 font-bold mb-1">Tanımlanan Piste Giriş Hakkı</label>
-                <input
-                  type="number"
-                  value={formData.totalEntriesGranted}
-                  onChange={(e) => setFormData({ ...formData, totalEntriesGranted: e.target.value })}
-                  className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white font-black text-sm"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* 6. Takılı Parçalar */}
+          {/* 5. Takılı Parçalar */}
           <div className="space-y-1">
             <label className="block text-gray-300 font-bold">
-              Takılı Parçalar & Donanım (Virgülle Ayırın)
+              Takılı Parçalar &amp; Donanım (Virgülle Ayırın)
             </label>
             <input
               type="text"
@@ -420,7 +456,7 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
               }`}
             >
               <Check className="w-5 h-5" />
-              <span>{isSubmitting ? 'Kaydediliyor...' : 'Motoru ve Hakları Kaydet'}</span>
+              <span>{isSubmitting ? 'Kaydediliyor...' : 'Motoru Kaydet'}</span>
             </button>
           </div>
 

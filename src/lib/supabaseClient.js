@@ -7,8 +7,8 @@ const envKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const localUrl = typeof window !== 'undefined' ? localStorage.getItem('usak_pist_supabase_url') : null;
 const localKey = typeof window !== 'undefined' ? localStorage.getItem('usak_pist_supabase_key') : null;
 
-const supabaseUrl = envUrl || localUrl;
-const supabaseAnonKey = envKey || localKey;
+export const supabaseUrl = envUrl || localUrl || '';
+export const supabaseAnonKey = envKey || localKey || '';
 
 export const isSupabaseConfigured = Boolean(
   supabaseUrl && 
@@ -27,14 +27,43 @@ export const supabase = isSupabaseConfigured
   : null;
 
 // Bağlantı durumunu kontrol etme fonksiyonu
-export async function testSupabaseConnection() {
-  if (!supabase) return { ok: false, message: 'Supabase URL veya Anon Key ayarlanmamış' };
+export async function testSupabaseConnection(customUrl = null, customKey = null) {
+  const client = (customUrl && customKey)
+    ? createClient(customUrl, customKey)
+    : supabase;
+
+  if (!client) {
+    return { ok: false, message: 'Supabase URL veya Anon Key ayarlanmamış' };
+  }
+
   try {
-    const { data, error } = await supabase.from('garages').select('id').limit(1);
+    const { data, error } = await client.from('garages').select('id').limit(1);
     if (error) throw error;
     return { ok: true, data };
   } catch (err) {
     console.warn('[Supabase Connection Warning]', err.message);
     return { ok: false, message: err.message };
   }
+}
+
+// Kullanıcının UI üzerinden Supabase bağlantısını kaydetmesi
+export function configureSupabase(url, key) {
+  if (typeof window !== 'undefined') {
+    if (url && key) {
+      localStorage.setItem('usak_pist_supabase_url', url.trim());
+      localStorage.setItem('usak_pist_supabase_key', key.trim());
+    } else {
+      localStorage.removeItem('usak_pist_supabase_url');
+      localStorage.removeItem('usak_pist_supabase_key');
+    }
+    window.location.reload();
+  }
+}
+
+export function getSupabaseConfig() {
+  return {
+    url: supabaseUrl,
+    key: supabaseAnonKey,
+    isConfigured: isSupabaseConfigured
+  };
 }
