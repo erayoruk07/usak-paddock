@@ -1,19 +1,15 @@
 -- ============================================================
 -- UŞAK YARIŞ PİSTİ PADDOCK GARAJ YÖNETİMİ
 -- Supabase SQL Şeması, İndeksler ve Canlı Log Sistemi
+-- Bu SQL dosyasını Supabase SQL Editor'da tek seferde
+-- veya dilediğiniz kadar güvenle çalıştırabilirsiniz.
 -- ============================================================
-
--- ============================================================
--- ⚡ MİGRASYON BÖLÜMÜ (Daha önce eski şemayı çalıştırdıysanız):
--- Supabase SQL Editor'da bunu tek başına çalıştırabilirsiniz:
--- ============================================================
-ALTER TABLE IF EXISTS public.admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'ADMIN';
 
 -- ============================================================
 -- 1. YETKİLİLER VE KULLANICILAR (ADMINS) TABLOSU
 -- ============================================================
 CREATE TABLE IF NOT EXISTS public.admins (
-    id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username TEXT UNIQUE NOT NULL,
     password TEXT NOT NULL,
     name TEXT,
@@ -21,9 +17,12 @@ CREATE TABLE IF NOT EXISTS public.admins (
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Varsayılan ilk yöneticiyi ekleyelim
-INSERT INTO public.admins (id, username, password, name, role)
-VALUES ('admin-1', 'admin', '123', 'Pist Yöneticisi', 'ADMIN')
+-- Eğer daha önceden tablo varsa 'role' sütununun var olduğundan emin olalım
+ALTER TABLE IF EXISTS public.admins ADD COLUMN IF NOT EXISTS role TEXT DEFAULT 'ADMIN';
+
+-- Varsayılan yöneticiyi ekleyelim (id belirtilmez, veritabanı UUID üretir)
+INSERT INTO public.admins (username, password, name, role)
+VALUES ('admin', '123', 'Pist Yöneticisi', 'ADMIN')
 ON CONFLICT (username) DO UPDATE 
 SET role = 'ADMIN' WHERE public.admins.username = 'admin';
 
@@ -103,7 +102,7 @@ CREATE TABLE IF NOT EXISTS public.entry_logs (
     action_type TEXT NOT NULL, -- 'TRACK_ENTRY', 'ENTRIES_GRANTED', 'BIKE_ADDED', 'BIKE_MOVED', 'USER_CREATED', 'USER_DELETED'
     note TEXT,
     remaining_entries INT,
-    performed_by TEXT, -- işlemi yapan kullanıcı adı
+    performed_by TEXT,
     created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -135,8 +134,15 @@ ALTER TABLE public.garages ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.bikes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.entry_logs ENABLE ROW LEVEL SECURITY;
 
--- Anon/Authenticated istemci tam okuma & yazma (Pist Ofis Operasyonu)
+-- Eski politikalar varsa temizle ve yeniden oluştur (Hata vermez)
+DROP POLICY IF EXISTS "Admins okuma/yazma politikası" ON public.admins;
 CREATE POLICY "Admins okuma/yazma politikası" ON public.admins FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Garajlar okuma/yazma politikası" ON public.garages;
 CREATE POLICY "Garajlar okuma/yazma politikası" ON public.garages FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Motorlar okuma/yazma politikası" ON public.bikes;
 CREATE POLICY "Motorlar okuma/yazma politikası" ON public.bikes FOR ALL USING (true) WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Loglar okuma/yazma politikası" ON public.entry_logs;
 CREATE POLICY "Loglar okuma/yazma politikası" ON public.entry_logs FOR ALL USING (true) WITH CHECK (true);
