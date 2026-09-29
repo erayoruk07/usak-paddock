@@ -4,7 +4,8 @@ import {
   TURKEY_MOTORCYCLE_DATABASE, 
   BLOOD_TYPES, 
   RELATIONS, 
-  formatPhoneNumber 
+  formatPhoneNumber,
+  formatFirstLetterLower
 } from '../data/mockData';
 
 export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarageId }) {
@@ -340,9 +341,12 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                 <label className="block text-gray-400 mb-1">Pilot Adı Soyadı</label>
                 <input
                   type="text"
-                  placeholder="Pilot tam adı"
+                  placeholder="örn: caner yıldız"
                   value={formData.ownerName}
-                  onChange={(e) => setFormData({ ...formData, ownerName: e.target.value })}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  onChange={(e) => setFormData({ ...formData, ownerName: formatFirstLetterLower(e.target.value) })}
                   className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white text-xs"
                   required
                 />
@@ -389,9 +393,12 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                   <label className="block text-gray-400 mb-1">Adı Soyadı</label>
                   <input
                     type="text"
-                    placeholder="Acil kişi adı soyadı"
+                    placeholder="örn: ayşe yıldız"
                     value={formData.emergencyName}
-                    onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck="false"
+                    onChange={(e) => setFormData({ ...formData, emergencyName: formatFirstLetterLower(e.target.value) })}
                     className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white text-xs"
                   />
                 </div>

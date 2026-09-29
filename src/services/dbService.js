@@ -98,7 +98,6 @@ export async function fetchAdmins() {
 }
 
 export async function insertAdmin(admin, currentUsername = 'Admin') {
-  // DB payload'una id göndermiyoruz; Supabase DEFAULT gen_random_uuid() ile otomatik UUID üretsin
   const dbPayload = {
     username: admin.username.trim(),
     password: admin.password.trim(),
@@ -106,7 +105,11 @@ export async function insertAdmin(admin, currentUsername = 'Admin') {
     role: admin.role || 'VIEWER'
   };
 
-  let createdId = admin.id || ('admin_' + Date.now());
+  let createdAdmin = { 
+    ...dbPayload, 
+    id: admin.id || ('admin_' + Date.now()),
+    createdAt: new Date().toISOString().split('T')[0]
+  };
 
   // 1. Supabase Canlı DB'ye Insert
   if (isSupabaseConfigured && supabase) {
@@ -114,24 +117,93 @@ export async function insertAdmin(admin, currentUsername = 'Admin') {
       const { data, error } = await supabase.from('admins').insert([dbPayload]).select();
       if (error) {
         console.error('[DB insertAdmin] Supabase insert hatası:', error.message);
-      } else if (data && data[0]?.id) {
-        createdId = data[0].id;
-        console.log('[DB insertAdmin] Başarıyla Supabase DB\'ye eklendi (UUID):', createdId);
+        throw new Error(error.message);
+      } else if (data && data[0]) {
+        createdAdmin = {
+          id: data[0].id,
+          username: data[0].username,
+          password: data[0].password,
+          name: data[0].name || data[0].username,
+          role: data[0].role || 'VIEWER',
+          createdAt: data[0].created_at ? data[0].created_at.split('T')[0] : new Date().toISOString().split('T')[0]
+        };
+        console.log('[DB insertAdmin] Başarıyla Supabase DB\'ye eklendi:', createdAdmin);
       }
     } catch (e) {
       console.error('[DB insertAdmin] Bağlantı hatası:', e);
+      throw e;
     }
   }
 
-  // 2. İşlem Logunu DB'ye Kaydet
+  // 2. Yerel Admin listesini de güncelle
+  const currentAdmins = loadAdmins();
+  const nextAdmins = [
+    ...currentAdmins.filter(a => a.username.toLowerCase() !== dbPayload.username.toLowerCase()),
+    createdAdmin
+  ];
+  saveAdmins(nextAdmins);
+
+  // 3. İşlem Logunu DB'ye Kaydet
   await logAction({
     actionType: 'USER_CREATED',
     note: `Yeni kullanıcı oluşturuldu: ${dbPayload.username} (Yetki: ${dbPayload.role})`,
     performedBy: currentUsername
   });
 
-  return { ...dbPayload, id: createdId };
+  return createdAdmin;
 }
+
+// Canlı Supabase ve Yerel Giriş Doğrulama (Mobildeki anlık girişleri çözer)
+export async function authenticateUser(username, password) {
+  const cleanUser = (username || '').trim();
+  const cleanPass = (password || '').trim();
+
+  // 1. Canlı Supabase DB'den anında sorgula (Mobilde henüz senkron olmasa dahi anında doğrular)
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('admins')
+        .select('*')
+        .ilike('username', cleanUser)
+        .eq('password', cleanPass)
+        .limit(1);
+
+      if (!error && data && data.length > 0) {
+        const found = data[0];
+        const userObj = {
+          id: found.id,
+          username: found.username,
+          password: found.password,
+          name: found.name || found.username,
+          role: found.role || 'VIEWER',
+          createdAt: found.created_at ? found.created_at.split('T')[0] : '2026-09-28'
+        };
+
+        // Yerel önbelleğe de kaydet
+        const local = loadAdmins();
+        if (!local.some(a => a.username.toLowerCase() === userObj.username.toLowerCase())) {
+          saveAdmins([...local, userObj]);
+        }
+        return { success: true, user: userObj };
+      }
+    } catch (err) {
+      console.warn('[DB authenticateUser] Supabase canlı kontrol hatası:', err);
+    }
+  }
+
+  // 2. Çevrimdışı / Yerel hafızadan kontrol
+  const localAdmins = loadAdmins();
+  const matched = localAdmins.find(
+    a => a.username.toLowerCase() === cleanUser.toLowerCase() && a.password === cleanPass
+  );
+
+  if (matched) {
+    return { success: true, user: matched };
+  }
+
+  return { success: false, message: 'Kullanıcı adı veya şifre hatalı! Lütfen kontrol ediniz.' };
+}
+
 
 export async function deleteAdmin(adminId, username, currentUsername = 'Admin') {
   if (isSupabaseConfigured && supabase) {

@@ -243,8 +243,8 @@ export default function App() {
 
   // Yeni Admin/Kullanıcı Ekleme - Doğrudan Supabase DB'ye Insert
   const handleAddAdmin = async (newAdmin) => {
-    setAdmins(prev => [...prev, newAdmin]);
-    await insertAdmin(newAdmin, currentUser?.name || currentUser?.username || 'Admin');
+    const created = await insertAdmin(newAdmin, currentUser?.name || currentUser?.username || 'Admin');
+    setAdmins(prev => [...prev.filter(a => a.username.toLowerCase() !== created.username.toLowerCase()), created]);
   };
 
   // Admin/Kullanıcı Silme - Doğrudan Supabase DB'den Delete

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, Users, UserPlus, Trash2, CheckCircle2, ShieldCheck, User, Shield, Eye } from 'lucide-react';
+import { X, Users, UserPlus, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, User, Shield, Eye } from 'lucide-react';
+import { formatFirstLetterLower } from '../data/mockData';
 
 export default function AdminManagementModal({ admins, currentUser, dbStatus, onClose, onAddAdmin, onDeleteAdmin, onClearAllTestBikes }) {
   const [newUsername, setNewUsername] = useState('');
@@ -8,6 +9,7 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
   const [newRole, setNewRole] = useState('VIEWER'); // Varsayılan olarak Gözlemci veya Admin
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -20,11 +22,12 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
     if (!newUsername.trim() || !newPassword.trim()) return;
 
     if (admins.some(a => a.username.toLowerCase() === newUsername.trim().toLowerCase())) {
-      alert('Bu kullanıcı adı zaten mevcut! Lütfen farklı bir kullanıcı adı seçin.');
+      setErrorMsg('Bu kullanıcı adı zaten mevcut! Lütfen farklı bir kullanıcı adı seçin.');
       return;
     }
 
     setIsSubmitting(true);
+    setErrorMsg('');
     const newAdmin = {
       id: 'admin_' + Date.now(),
       username: newUsername.trim(),
@@ -40,8 +43,10 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
       setNewPassword('');
       setNewName('');
       setNewRole('VIEWER');
-      setSuccessMsg('Yeni kullanıcı başarıyla tanımlandı ve veritabanına kaydedildi!');
-      setTimeout(() => setSuccessMsg(''), 3500);
+      setSuccessMsg('Yeni kullanıcı başarıyla tanımlandı ve canlı veritabanına kaydedildi!');
+      setTimeout(() => setSuccessMsg(''), 4000);
+    } catch (err) {
+      setErrorMsg('Veritabanına kaydedilirken hata oluştu: ' + (err.message || 'Bilinmeyen hata'));
     } finally {
       setIsSubmitting(false);
     }
@@ -89,8 +94,16 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
           {/* Başarı Mesajı */}
           {successMsg && (
             <div className="p-3 rounded-2xl bg-emerald-950/60 border border-emerald-600 text-emerald-400 text-xs font-bold flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4" />
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>{successMsg}</span>
+            </div>
+          )}
+
+          {/* Hata Mesajı */}
+          {errorMsg && (
+            <div className="p-3 rounded-2xl bg-red-950/80 border border-red-600 text-red-300 text-xs font-bold flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
             </div>
           )}
 
@@ -106,9 +119,12 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
                 <label className="block text-gray-300 font-bold mb-1">Ad Soyad (İsteğe Bağlı)</label>
                 <input
                   type="text"
-                  placeholder="örn: Mehmet Görevli"
+                  placeholder="örn: mehmet görevli"
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
+                  onChange={(e) => setNewName(formatFirstLetterLower(e.target.value))}
                   className="w-full bg-black border border-gray-700 rounded-xl px-3 py-2 text-white font-bold"
                 />
               </div>

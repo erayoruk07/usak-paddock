@@ -25,7 +25,7 @@ import {
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import confetti from 'canvas-confetti';
-import { BLOOD_TYPES, RELATIONS, formatPhoneNumber } from '../data/mockData';
+import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatFirstLetterLower } from '../data/mockData';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -634,7 +634,10 @@ export default function BikeDetailModal({
                       <input
                         type="text"
                         value={vehicleForm.ownerName}
-                        onChange={(e) => setVehicleForm({ ...vehicleForm, ownerName: e.target.value })}
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck="false"
+                        onChange={(e) => setVehicleForm({ ...vehicleForm, ownerName: formatFirstLetterLower(e.target.value) })}
                         required
                         className="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-white font-bold focus:border-amber-500 focus:outline-none"
                       />
@@ -670,7 +673,10 @@ export default function BikeDetailModal({
                         <input
                           type="text"
                           value={vehicleForm.emergencyName}
-                          onChange={(e) => setVehicleForm({ ...vehicleForm, emergencyName: e.target.value })}
+                          autoCapitalize="none"
+                          autoCorrect="off"
+                          spellCheck="false"
+                          onChange={(e) => setVehicleForm({ ...vehicleForm, emergencyName: formatFirstLetterLower(e.target.value) })}
                           placeholder="Yakın Adı"
                           className="w-1/2 bg-gray-900 border border-gray-700 rounded-xl p-2 text-white font-bold text-xs"
                         />

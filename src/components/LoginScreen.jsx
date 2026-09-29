@@ -1,25 +1,33 @@
 import React, { useState } from 'react';
 import { Warehouse, Lock, User, AlertCircle, ArrowRight } from 'lucide-react';
 
+import { authenticateUser } from '../services/dbService';
+
 export default function LoginScreen({ onLogin, admins }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const currentYear = new Date().getFullYear();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError('');
+    setLoading(true);
 
-    const matchedAdmin = admins.find(
-      a => a.username.toLowerCase() === username.trim().toLowerCase() && a.password === password
-    );
-
-    if (matchedAdmin) {
-      onLogin(matchedAdmin);
-    } else {
-      setError('Kullanıcı adı veya şifre hatalı! Lütfen kontrol ediniz.');
+    try {
+      const res = await authenticateUser(username, password);
+      if (res.success && res.user) {
+        onLogin(res.user);
+      } else {
+        setError(res.message || 'Kullanıcı adı veya şifre hatalı!');
+      }
+    } catch (err) {
+      setError('Giriş yapılırken bir hata oluştu: ' + (err.message || 'Bilinmeyen hata'));
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -90,9 +98,10 @@ export default function LoginScreen({ onLogin, admins }) {
           <div className="pt-2">
             <button
               type="submit"
-              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black text-base flex items-center justify-center space-x-2 shadow-xl shadow-red-600/30 transition transform active:scale-95"
+              disabled={loading}
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 disabled:opacity-50 text-white font-black text-base flex items-center justify-center space-x-2 shadow-xl shadow-red-600/30 transition transform active:scale-95"
             >
-              <span>SİSTEME GİRİŞ YAP</span>
+              <span>{loading ? 'GİRİŞ YAPILIYOR...' : 'SİSTEME GİRİŞ YAP'}</span>
               <ArrowRight className="w-5 h-5" />
             </button>
           </div>

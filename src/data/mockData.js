@@ -110,6 +110,12 @@ export function formatPhoneNumber(value) {
   return formatted;
 }
 
+// İsim ve metin ifadelerinde ilk harfi otomatik küçük harf yapan formatlayıcı (Türkçe uyumlu)
+export function formatFirstLetterLower(value) {
+  if (!value) return '';
+  return value.charAt(0).toLocaleLowerCase('tr-TR') + value.slice(1);
+}
+
 export const STORAGE_KEY_GARAGES = "usak_pist_garage_boxes_v3";
 export const STORAGE_KEY_BIKES = "usak_pist_garage_bikes_v5";
 
