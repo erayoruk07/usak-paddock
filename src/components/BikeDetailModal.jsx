@@ -26,6 +26,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
+import { openWhatsAppMessage } from '../utils/whatsappHelper';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -157,13 +158,10 @@ export default function BikeDetailModal({
     });
   };
 
-  // WhatsApp hatırlatması
+  // WhatsApp hatırlatması (Güvenli & Türkiye Formatı Destekli)
   const handleSendWhatsApp = () => {
-    const phone = bike.owner?.phone?.replace(/[^0-9]/g, '');
-    const text = encodeURIComponent(
-      `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni giriş paketi tanımlamak için bizimle iletişime geçebilirsiniz. İyi günler dileriz. - Uşak Paddock Yönetimi`
-    );
-    window.open(`https://wa.me/${phone}?text=${text}`, '_blank');
+    const text = `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni giriş paketi tanımlamak için bizimle iletişime geçebilirsiniz. İyi günler dileriz. - Uşak Paddock Yönetimi`;
+    openWhatsAppMessage(bike.owner?.phone, text);
   };
 
   // Araç & Ruhsat Bilgilerini Kaydetme

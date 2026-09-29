@@ -1,146 +1,176 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <!-- Arka Plan Radyal ve Doğrusal Gradyanlar -->
-    <radialGradient id="bgGlow" cx="50%" cy="35%" r="65%">
-      <stop offset="0%" stop-color="#1F2937" />
-      <stop offset="55%" stop-color="#0E131F" />
-      <stop offset="100%" stop-color="#07090E" />
+    <!-- Karbon Arka Plan Radyal Gradyan -->
+    <radialGradient id="carbonBg" cx="50%" cy="40%" r="65%">
+      <stop offset="0%" stop-color="#1A202C" />
+      <stop offset="60%" stop-color="#0E131F" />
+      <stop offset="100%" stop-color="#06080D" />
     </radialGradient>
 
-    <!-- Yarış Kırmızısı Gradyan -->
-    <linearGradient id="raceRed" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FF2E3B" />
-      <stop offset="50%" stop-color="#DC2626" />
-      <stop offset="100%" stop-color="#991B1B" />
+    <!-- Yarış Kırmızısı (Ferrari / Ducati / MotoGP Red) -->
+    <linearGradient id="apexRed" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FF3838" />
+      <stop offset="45%" stop-color="#E60000" />
+      <stop offset="100%" stop-color="#990000" />
     </linearGradient>
 
-    <!-- Metalik Gümüş / Krom -->
-    <linearGradient id="chrome" x1="0%" y1="0%" x2="0%" y2="100%">
+    <!-- Titanyum Krom Gradyan -->
+    <linearGradient id="titaniumChrome" x1="0%" y1="0%" x2="0%" y2="100%">
       <stop offset="0%" stop-color="#FFFFFF" />
-      <stop offset="40%" stop-color="#E5E7EB" />
-      <stop offset="70%" stop-color="#9CA3AF" />
-      <stop offset="100%" stop-color="#4B5563" />
+      <stop offset="30%" stop-color="#E2E8F0" />
+      <stop offset="70%" stop-color="#94A3B8" />
+      <stop offset="100%" stop-color="#475569" />
     </linearGradient>
 
-    <!-- Şampiyonluk Altını -->
-    <linearGradient id="paddockGold" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#FCD34D" />
+    <!-- Altın Apex Gradyan -->
+    <linearGradient id="goldApex" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FDE047" />
       <stop offset="50%" stop-color="#F59E0B" />
-      <stop offset="100%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
     </linearGradient>
 
-    <!-- Neon Cyan Detay -->
-    <linearGradient id="neonCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+    <!-- Neon Cyan Detay Işıması -->
+    <linearGradient id="cyanSpeed" x1="0%" y1="0%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#38BDF8" />
       <stop offset="100%" stop-color="#0284C7" />
     </linearGradient>
 
-    <!-- Hafif İç Gölgelendirme Filtresi -->
-    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.8" />
+    <!-- Derinlik ve Işıma Filtreleri -->
+    <filter id="badgeShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#E60000" flood-opacity="0.6" />
     </filter>
   </defs>
 
-  <!-- 1. Arka Plan (Squircle Köşeli, Mobil Uyumlu) -->
-  <rect width="512" height="512" rx="112" fill="url(#bgGlow)" />
+  <!-- 1. Dış Squircle Kalkan Gövde (Mobil & Masaüstü İkon Uyumlu) -->
+  <rect width="512" height="512" rx="112" fill="url(#carbonBg)" />
 
-  <!-- Dış Yarış Bordürü -->
-  <rect x="12" y="12" width="488" height="488" rx="102" fill="none" stroke="url(#raceRed)" stroke-width="5" stroke-opacity="0.45" />
+  <!-- Dış Karbon Şerit & Lazer Kenarlık -->
+  <rect x="14" y="14" width="484" height="484" rx="100" fill="none" stroke="url(#apexRed)" stroke-width="4" stroke-opacity="0.4" />
+  <rect x="22" y="22" width="468" height="468" rx="92" fill="none" stroke="#FFFFFF" stroke-width="1" stroke-opacity="0.1" />
 
-  <!-- Damalı Bayrak Üst Şeridi (Pist Teması) -->
-  <g opacity="0.18">
-    <rect x="80" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="124" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="168" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="212" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="256" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="300" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="344" y="32" width="22" height="12" fill="#FFFFFF" />
-    <rect x="388" y="32" width="22" height="12" fill="#FFFFFF" />
-
-    <rect x="102" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="146" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="190" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="234" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="278" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="322" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="366" y="44" width="22" height="12" fill="#FFFFFF" />
-    <rect x="410" y="44" width="22" height="12" fill="#FFFFFF" />
+  <!-- Karbon Fiber / Damalı Bayrak Estetik Doku İzleri -->
+  <g opacity="0.12">
+    <path d="M 0 64 L 512 64 M 0 128 L 512 128 M 0 192 L 512 192 M 0 256 L 512 256 M 0 320 L 512 320 M 0 384 L 512 384 M 0 448 L 512 448" stroke="#FFFFFF" stroke-width="1.5" stroke-dasharray="16 16" />
   </g>
 
-  <!-- 2. PADDOCK BOX KEPENK & GARAJ MİMARİSİ -->
-  <g filter="url(#dropShadow)">
-    <!-- Garaj Dış Çerçevesi -->
-    <path d="M 120 120 L 256 64 L 392 120 L 392 360 L 120 360 Z" fill="#131926" stroke="#252F42" stroke-width="6" stroke-linejoin="round" />
+  <!-- 2. ANA YARIŞ KALKANI (AERODYNAMIC RACING CREST) -->
+  <g filter="url(#badgeShadow)">
     
-    <!-- Çatı Alınlığı (Kırmızı Yarış Üçgeni) -->
-    <path d="M 124 122 L 256 68 L 388 122 Z" fill="url(#raceRed)" />
+    <!-- Geometrik Agresif Kalkan Dış Kabuğu -->
+    <path d="M 256 68 
+             L 416 132 
+             L 384 340 
+             L 256 432 
+             L 128 340 
+             L 96 132 Z" 
+          fill="#0B0F19" 
+          stroke="url(#titaniumChrome)" 
+          stroke-width="5" 
+          stroke-linejoin="round" />
 
-    <!-- Çatı Üstü "UŞAK" Yazısı -->
-    <text x="256" y="112" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="28" font-weight="900" font-style="italic" fill="#FFFFFF" text-anchor="middle" letter-spacing="4">
-      UŞAK PİSTİ
-    </text>
+    <!-- Kalkan İçi Kırmızı Apex Hız Dolgusu -->
+    <path d="M 256 78 
+             L 404 138 
+             L 374 332 
+             L 256 418 
+             L 138 332 
+             L 108 138 Z" 
+          fill="#111624" />
 
-    <!-- Kepenk Kapı Alanı -->
-    <rect x="146" y="140" width="220" height="200" rx="14" fill="#0A0D14" stroke="#374151" stroke-width="4" />
+    <!-- Sağ Üst Kırmızı Dinamik Yarış Yüzeyi -->
+    <path d="M 256 78 
+             L 404 138 
+             L 374 332 
+             L 256 418 Z" 
+          fill="url(#apexRed)" 
+          opacity="0.18" />
 
-    <!-- Metalik Kepenk Çizgileri (Paddock Box Ruhu) -->
-    <line x1="152" y1="164" x2="360" y2="164" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="184" x2="360" y2="184" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="204" x2="360" y2="204" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="224" x2="360" y2="224" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="244" x2="360" y2="244" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="264" x2="360" y2="264" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="284" x2="360" y2="284" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="304" x2="360" y2="304" stroke="#1E2638" stroke-width="3" />
-    <line x1="152" y1="324" x2="360" y2="324" stroke="#1E2638" stroke-width="3" />
+    <!-- 3. İKONİK MERKEZ: PİST APEX VİRAJI & STİLİZE YARIŞ MOTİFİ -->
+    
+    <!-- Dış Dinamik Pist Virajı (Kırmızı / Beyaz Kerb Bordür Çizgisi) -->
+    <path d="M 148 184 
+             C 210 120, 310 120, 364 184 
+             C 400 228, 380 296, 324 332 
+             L 256 376 
+             L 230 332 
+             C 272 304, 290 264, 270 232 
+             C 244 192, 188 194, 148 226 Z" 
+          fill="url(#apexRed)" 
+          filter="url(#neonGlow)" />
 
-    <!-- 3. MOTOSİKLET VE YARIŞ SİMGESİ (ORTADA PARLAYAN SİLÜET) -->
-    <!-- Şık Yarış Motosikleti İkonu (Vektörel) -->
-    <g transform="translate(176, 172) scale(1.7)" filter="url(#dropShadow)">
-      <!-- Arka Tekerlek -->
-      <circle cx="16" cy="62" r="14" fill="none" stroke="url(#chrome)" stroke-width="4.5" />
-      <circle cx="16" cy="62" r="6" fill="#DC2626" />
+    <!-- İç Metalik Hız Bıçağı (Aerodinamik Yarış Kanadı & "P" - Paddock Monogramı) -->
+    <path d="M 172 152 
+             L 332 152 
+             L 348 196 
+             L 256 196 
+             L 242 248 
+             L 316 248 
+             L 302 292 
+             L 228 292 
+             L 194 396 
+             L 154 396 
+             L 196 248 
+             L 164 248 Z" 
+          fill="url(#titaniumChrome)" />
 
-      <!-- Ön Tekerlek -->
-      <circle cx="78" cy="62" r="14" fill="none" stroke="url(#chrome)" stroke-width="4.5" />
-      <circle cx="78" cy="62" r="6" fill="#DC2626" />
+    <!-- Hız Çizgileri & Apex Vurguları (Cyan & Altın Rüzgarı) -->
+    <path d="M 198 168 L 320 168 L 312 184 L 202 184 Z" fill="#FFFFFF" opacity="0.9" />
+    <polygon points="268,260 306,260 298,280 260,280" fill="url(#goldApex)" />
 
-      <!-- Şasi ve Gövde -->
-      <path d="M 16 62 L 34 46 L 54 44 L 78 62" fill="none" stroke="url(#raceRed)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" />
-      
-      <!-- Depo ve Kuyruk -->
-      <path d="M 24 44 L 38 32 L 56 34 L 64 44 Z" fill="url(#raceRed)" />
-      
-      <!-- Ön Grenaj ve Cam -->
-      <path d="M 56 34 L 72 32 L 66 48 Z" fill="#FBBF24" />
-
-      <!-- Pilot Kaskı -->
-      <circle cx="48" cy="24" r="8" fill="#FFFFFF" stroke="#DC2626" stroke-width="2" />
-      <path d="M 49 22 L 55 24 L 52 27 Z" fill="#111827" />
-
-      <!-- Egzoz ve Hız Hattı -->
-      <line x1="22" y1="58" x2="38" y2="52" stroke="url(#chrome)" stroke-width="3" stroke-linecap="round" />
-      <line x1="2" y1="46" x2="16" y2="46" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
-      <line x1="-4" y1="54" x2="10" y2="54" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" opacity="0.8" />
+    <!-- İki adet Yarış Şeridi (Damalı Bayrak Vurgusu) -->
+    <g transform="translate(196, 102)" opacity="0.85">
+      <rect x="0" y="0" width="16" height="12" fill="#FFFFFF" />
+      <rect x="32" y="0" width="16" height="12" fill="#FFFFFF" />
+      <rect x="64" y="0" width="16" height="12" fill="#FFFFFF" />
+      <rect x="96" y="0" width="16" height="12" fill="#FFFFFF" />
+      <rect x="16" y="12" width="16" height="12" fill="#FFFFFF" />
+      <rect x="48" y="12" width="16" height="12" fill="#FFFFFF" />
+      <rect x="80" y="12" width="16" height="12" fill="#FFFFFF" />
     </g>
 
-    <!-- 10 PADDOCK BOX ROZETİ (GARAJ NO VURGUSU) -->
-    <g transform="translate(196, 320)">
-      <rect x="0" y="0" width="120" height="28" rx="8" fill="url(#raceRed)" stroke="#FFFFFF" stroke-width="1.5" />
-      <text x="60" y="19" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="900" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">
-        10 BOX GARAJ
+    <!-- Küçük ve Keskin "UŞAK" Başlığı Kalkanın Üstünde -->
+    <text x="256" y="92" 
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+          font-size="20" 
+          font-weight="900" 
+          font-style="italic" 
+          fill="#FFFFFF" 
+          text-anchor="middle" 
+          letter-spacing="6">
+      UŞAK
+    </text>
+
+    <!-- 4. PADDOCK BOX ALT METAL PLAKA -->
+    <g transform="translate(166, 360)">
+      <rect x="0" y="0" width="180" height="34" rx="10" fill="#0B0F19" stroke="url(#apexRed)" stroke-width="2.5" />
+      <text x="90" y="23" 
+            font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+            font-size="16" 
+            font-weight="900" 
+            font-style="italic" 
+            fill="url(#goldApex)" 
+            text-anchor="middle" 
+            letter-spacing="3">
+        PADDOCK BOX
       </text>
     </g>
   </g>
 
-  <!-- 4. ALT ŞERİT BÜYÜK "PADDOCK" METNİ -->
-  <g transform="translate(256, 428)">
-    <text x="0" y="0" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="46" font-weight="900" font-style="italic" fill="url(#chrome)" text-anchor="middle" letter-spacing="6">
-      PADDOCK
-    </text>
-    <text x="0" y="26" font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" fill="#38BDF8" text-anchor="middle" letter-spacing="4">
-      GARAGE &amp; TRACK SYSTEM
+  <!-- 5. EN ALT KURUMSAL ŞERİT -->
+  <g transform="translate(256, 474)">
+    <text x="0" y="0" 
+          font-family="system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" 
+          font-size="15" 
+          font-weight="900" 
+          font-style="italic" 
+          fill="#94A3B8" 
+          text-anchor="middle" 
+          letter-spacing="5">
+      MOTORSPORT CIRCUIT
     </text>
   </g>
 </svg>

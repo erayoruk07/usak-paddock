@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PaymentSummaryModal from './PaymentSummaryModal';
+import { openWhatsAppMessage } from '../utils/whatsappHelper';
 
 export default function RentManagement({ 
   bikes, 
@@ -33,13 +34,10 @@ export default function RentManagement({
   const expiredBikes = bikes.filter(b => (b.remainingEntries ?? 0) <= 0);
   const activeBikes = bikes.filter(b => (b.remainingEntries ?? 0) > 0);
 
-  // WhatsApp'tan Hak Bitti Uyarısı Gönder
+  // WhatsApp'tan Hak Bitti Uyarısı Gönder (Güvenli & Türkiye Formatı Destekli)
   const sendWhatsAppReminder = (bike) => {
-    const phone = bike.owner?.phone?.replace(/[^0-9]/g, '');
-    const message = encodeURIComponent(
-      `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni 5 seanslık paket yüklemek için pist ofisimizle iletişime geçebilirsiniz. - Uşak Paddock Yönetimi`
-    );
-    window.open(`https://wa.me/${phone}?text=${message}`, '_blank');
+    const text = `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni 5 seanslık paket yüklemek için pist ofisimizle iletişime geçebilirsiniz. - Uşak Paddock Yönetimi`;
+    openWhatsAppMessage(bike.owner?.phone, text);
   };
 
   // Piste Giriş Yap (-1 Hak Düş) Fallback
