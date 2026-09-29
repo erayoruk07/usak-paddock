@@ -38,7 +38,7 @@ export default function Navbar({
                 UŞAK PİSTİ
               </span>
               <span className="text-[10px] text-red-400 font-bold tracking-widest uppercase block leading-none">
-                10 PADDOCK BOX
+                PADDOCK BOX
               </span>
             </div>
           </div>

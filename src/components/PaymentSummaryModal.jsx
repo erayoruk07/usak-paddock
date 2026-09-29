@@ -47,20 +47,9 @@ export default function PaymentSummaryModal({
     (h.note && (h.note.includes('piste') || h.note.includes('Piste') || h.note.includes('seans')))
   );
 
-  // Eğer hiç payment kaydı bulunmuyorsa ama araçta paymentAmount varsa, başlangıç özet kaydı oluşturalım
-  const displayPayments = paymentRecords.length > 0 ? paymentRecords : [
-    {
-      id: 'init_pay',
-      date: bike.created_at ? bike.created_at.split('T')[0] : 'İlk Kayıt Tarihi',
-      amount: bike.paymentAmount || 7000,
-      method: 'Nakit / Banka',
-      entriesCount: totalGranted,
-      note: 'İlk kayıt ve seans paketi tahsilatı',
-      performedBy: 'Pist Yetkilisi'
-    }
-  ];
-
-  const totalPaid = bike.paymentAmount || displayPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+  // Sadece sisteme gerçek girilmiş ödeme kayıtlarını göster (otomatik tahsilat kaydı atılmaz)
+  const displayPayments = paymentRecords;
+  const totalPaid = paymentRecords.reduce((acc, p) => acc + (Number(p.amount) || 0), 0) || (bike.paymentAmount || 0);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto animate-fade-in">
@@ -228,8 +217,26 @@ export default function PaymentSummaryModal({
               })}
 
               {displayPayments.length === 0 && (
-                <div className="py-10 text-center text-gray-500 text-xs">
-                  Henüz kayıtlı ödeme işlemi bulunmuyor.
+                <div className="py-12 px-4 text-center rounded-2xl bg-gray-900/60 border border-gray-800 space-y-3">
+                  <Receipt className="w-10 h-10 text-gray-600 mx-auto" />
+                  <div className="text-sm font-bold text-gray-300">
+                    Henüz Tahsilat / Ödeme Kaydı Yok
+                  </div>
+                  <p className="text-xs text-gray-500 max-w-sm mx-auto">
+                    Bu motor için henüz bir ödeme veya seans paketi tahsilatı girilmemiştir.
+                  </p>
+                  {currentUser?.role !== 'VIEWER' && (
+                    <button
+                      onClick={() => {
+                        onClose();
+                        if (onOpenAddEntries) onOpenAddEntries(bike);
+                      }}
+                      className="px-4 py-2.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs inline-flex items-center space-x-1.5 shadow"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ İlk Tahsilatı & Hak Paketini Gir</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>

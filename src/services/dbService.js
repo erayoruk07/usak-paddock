@@ -28,9 +28,9 @@ export function bikeToDb(b) {
     emergency_name: b.owner?.emergencyName || '',
     emergency_relation: b.owner?.emergencyRelation || 'Eşi',
     emergency_phone: b.owner?.emergencyPhone || '',
-    payment_amount: b.paymentAmount || 7000,
-    remaining_entries: b.remainingEntries ?? 5,
-    total_entries_granted: b.totalEntriesGranted ?? 5,
+    payment_amount: b.paymentAmount ?? 0,
+    remaining_entries: b.remainingEntries ?? 0,
+    total_entries_granted: b.totalEntriesGranted ?? 0,
     equipped_parts: b.equippedParts || [],
     entry_history: b.entryHistory || [],
     updated_at: new Date().toISOString()

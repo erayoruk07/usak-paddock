@@ -77,9 +77,9 @@ CREATE TABLE IF NOT EXISTS public.bikes (
     emergency_phone TEXT,
     
     -- Bakiye & Pist Giriş Hakları
-    payment_amount NUMERIC DEFAULT 7000,
-    remaining_entries INT DEFAULT 5,
-    total_entries_granted INT DEFAULT 5,
+    payment_amount NUMERIC DEFAULT 0,
+    remaining_entries INT DEFAULT 0,
+    total_entries_granted INT DEFAULT 0,
     
     -- JSONB Donanımlar ve Giriş Logları
     equipped_parts JSONB DEFAULT '[]'::jsonb,
