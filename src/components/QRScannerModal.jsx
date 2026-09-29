@@ -4,19 +4,16 @@ import {
   Camera, 
   X, 
   Upload, 
-  Sparkles, 
   CheckCircle2, 
   AlertCircle, 
-  Volume2, 
-  ScanLine, 
-  Bike
+  ScanLine,
+  Info
 } from 'lucide-react';
 
 export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
   const [scanResult, setScanResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
-  const [selectedDemoBike, setSelectedDemoBike] = useState(bikes[0]?.id || '');
   const html5QrCodeRef = useRef(null);
 
   // Sesli Bip Çalma (Web Audio API)
@@ -54,7 +51,7 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
       stopScanner();
       setTimeout(() => {
         onBikeFound(matchedBike);
-      }, 500);
+      }, 400);
     } else {
       setErrorMsg(`QR kod okundu ancak bu ID ile eşleşen motor bulunamadı: "${decodedText}"`);
     }
@@ -67,34 +64,54 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
       html5QrCodeRef.current = scanner;
 
       const config = {
-        fps: 10,
+        fps: 15,
         qrbox: { width: 250, height: 250 },
         aspectRatio: 1.0
       };
 
+      // Doğrudan arka kamera ID'sini bularak başlat (Tarayıcının sürekli izin promptu çıkarmasını engeller)
+      let cameraConfig = { facingMode: 'environment' };
+      try {
+        const cameras = await Html5Qrcode.getCameras();
+        if (cameras && cameras.length > 0) {
+          const backCam = cameras.find(c => 
+            c.label.toLowerCase().includes('back') || 
+            c.label.toLowerCase().includes('rear') || 
+            c.label.toLowerCase().includes('environment') ||
+            c.label.toLowerCase().includes('arka')
+          ) || cameras[cameras.length - 1];
+
+          if (backCam && backCam.id) {
+            cameraConfig = backCam.id;
+          }
+        }
+      } catch (e) {
+        console.warn('Cameras list error, fallback to facingMode:', e);
+      }
+
       await scanner.start(
-        { facingMode: 'environment' }, // Arka kamera öncelikli
+        cameraConfig,
         config,
         (decodedText) => {
           handleScanSuccess(decodedText);
         },
-        (error) => {
-          // scanning progress (not fatal)
-        }
+        () => {}
       );
 
       setIsScanning(true);
     } catch (err) {
       console.warn('Camera start error:', err);
-      setErrorMsg('Kamera erişimi sağlanamadı. Lütfen kamera izni verildiğinden emin olun veya aşağıdaki simülasyon/dosya yükleme seçeneğini kullanın.');
+      setErrorMsg('Kamera erişimi sağlanamadı. Lütfen tarayıcınızın kilit simgesinden kamera iznini "Her Zaman İzin Ver" olarak ayarlayınız.');
       setIsScanning(false);
     }
   };
 
   const stopScanner = async () => {
-    if (html5QrCodeRef.current && html5QrCodeRef.current.isScanning) {
+    if (html5QrCodeRef.current) {
       try {
-        await html5QrCodeRef.current.stop();
+        if (html5QrCodeRef.current.isScanning) {
+          await html5QrCodeRef.current.stop();
+        }
         html5QrCodeRef.current.clear();
       } catch (e) {
         console.error('Stop scanner error', e);
@@ -121,18 +138,6 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
       handleScanSuccess(result);
     } catch (err) {
       setErrorMsg('Yüklenen fotoğrafta geçerli bir motor karekodu tespit edilemedi.');
-    }
-  };
-
-  // Test / Hızlı Simülasyon
-  const handleSimulateScan = (bikeId) => {
-    const selected = bikes.find(b => b.id === bikeId);
-    if (selected) {
-      playBeep();
-      setScanResult(`USAK_TRACK_BIKE:${selected.id}`);
-      setTimeout(() => {
-        onBikeFound(selected);
-      }, 300);
     }
   };
 
@@ -174,7 +179,7 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
             <div id="qr-reader-container" className="w-full h-full"></div>
             <div id="qr-file-reader-dummy" className="hidden"></div>
 
-            {/* Yarış Kaskatı Nişangah / Lazer Çizgisi */}
+            {/* Lazer Çizgisi & Nişangah */}
             <div className="pointer-events-none absolute inset-4 border border-cyan-500/40 rounded-xl flex flex-col justify-between p-2">
               <div className="flex justify-between">
                 <div className="w-4 h-4 border-t-2 border-l-2 border-cyan-400"></div>
@@ -210,11 +215,11 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
             </div>
           )}
 
-          {/* Alternatif 1: Galeriden / Fotoğraftan QR Seç */}
-          <div className="flex items-center justify-center space-x-3 pt-1">
+          {/* Alternatif: Galeriden / Fotoğraftan QR Çöz */}
+          <div className="flex flex-col items-center justify-center space-y-2 pt-1">
             <label className="cursor-pointer px-4 py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-200 text-xs font-semibold border border-gray-700 flex items-center space-x-2 transition">
               <Upload className="w-4 h-4 text-cyan-400" />
-              <span>Fotoğraf Yükle & Çöz</span>
+              <span>Galeriden Fotoğraf Seç & Çöz</span>
               <input 
                 type="file" 
                 accept="image/*" 
@@ -222,38 +227,11 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
                 onChange={handleFileUpload} 
               />
             </label>
-          </div>
 
-          {/* Alternatif 2: Hızlı Test & Demo Simülatörü */}
-          <div className="mt-4 p-3.5 rounded-2xl bg-gray-900/70 border border-gray-800 space-y-2">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-orange-400 flex items-center">
-                <Sparkles className="w-3.5 h-3.5 mr-1" />
-                Hızlı Test & Simülasyon
-              </span>
-              <span className="text-[10px] text-gray-500">Masaüstü Testi İçin</span>
-            </div>
-            <p className="text-[11px] text-gray-400">
-              Telefon kameranız yanınızda değilse, garajdaki motorlardan birini seçip okutmuş gibi simüle edebilirsiniz:
-            </p>
-            <div className="flex space-x-2">
-              <select
-                value={selectedDemoBike}
-                onChange={(e) => setSelectedDemoBike(e.target.value)}
-                className="flex-1 bg-black/60 border border-gray-700 rounded-xl px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-orange-500"
-              >
-                {bikes.map(b => (
-                  <option key={b.id} value={b.id}>
-                    #{b.raceNumber} - {b.brand} {b.model} ({b.owner?.fullName})
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => handleSimulateScan(selectedDemoBike)}
-                className="px-3.5 py-1.5 bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-xs rounded-xl shadow transition"
-              >
-                Simüle Et
-              </button>
+            {/* İzin Bilgilendirme Notu */}
+            <div className="flex items-center space-x-1.5 text-[11px] text-gray-400 text-center px-4">
+              <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>Sürekli izin sormaması için tarayıcınızın kilit simgesinden kamerayı <b>"Her Zaman İzin Ver"</b> yapabilirsiniz.</span>
             </div>
           </div>
 
