@@ -23,6 +23,7 @@ export default function PaymentSummaryModal({
 }) {
   if (!bike) return null;
 
+  const isViewer = currentUser?.role?.toUpperCase() === 'VIEWER';
   const [activeTab, setActiveTab] = useState('payments'); // 'payments' | 'entries'
 
   const remaining = bike.remainingEntries ?? 0;
@@ -221,7 +222,7 @@ export default function PaymentSummaryModal({
                   <p className="text-xs text-gray-400 max-w-sm mx-auto">
                     Bu motor için henüz bir ödeme veya seans paketi tahsilatı girilmemiştir.
                   </p>
-                  {currentUser?.role !== 'VIEWER' && (
+                  {!isViewer && (
                     <button
                       onClick={() => {
                         onClose();

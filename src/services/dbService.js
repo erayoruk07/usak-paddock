@@ -84,7 +84,7 @@ export async function fetchAdmins() {
           username: a.username,
           password: a.password,
           name: a.name || a.username,
-          role: a.role || 'VIEWER',
+          role: (a.role || (a.username?.toLowerCase() === 'admin' ? 'ADMIN' : 'VIEWER')).toUpperCase(),
           createdAt: a.created_at ? a.created_at.split('T')[0] : '2026-09-28'
         }));
         saveAdmins(mapped);
@@ -177,7 +177,7 @@ export async function authenticateUser(username, password) {
           username: found.username,
           password: found.password,
           name: found.name || found.username,
-          role: found.role || 'VIEWER',
+          role: (found.role || (found.username?.toLowerCase() === 'admin' ? 'ADMIN' : 'VIEWER')).toUpperCase(),
           createdAt: found.created_at ? found.created_at.split('T')[0] : '2026-09-28'
         };
 

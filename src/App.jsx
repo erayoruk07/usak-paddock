@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, 
   Bike, 
-  AlertTriangle
+  AlertTriangle,
+  Ticket
 } from 'lucide-react';
 
 import { 
@@ -50,6 +51,7 @@ import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
 import TrackEntryModal from './components/TrackEntryModal';
 import AddEntriesModal from './components/AddEntriesModal';
+import ErrorBoundary from './components/ErrorBoundary';
 import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from './utils/whatsappHelper';
 
 export default function App() {
@@ -580,18 +582,38 @@ export default function App() {
           </div>
         )}
 
-        {/* TAB 3: PİST GİRİŞ HAKLARI (BAKİYE & SEANS TAKİBİ - Sadece Yönetici) */}
-        {activeTab === 'rent' && currentUser?.role !== 'VIEWER' && (
-          <div className="animate-fade-in">
-            <RentManagement 
-              bikes={bikes} 
-              currentUser={currentUser}
-              onUpdateBike={handleUpdateBike}
-              onSelectBike={(b) => setSelectedBike(b)}
-              onOpenTrackEntry={(b) => setTrackEntryBike(b)}
-              onOpenAddEntries={(b) => setAddEntriesBike(b)}
-            />
-          </div>
+        {/* TAB 3: PİST GİRİŞ HAKLARI (BAKİYE & SEANS TAKİBİ) */}
+        {activeTab === 'rent' && (
+          currentUser?.role?.toUpperCase() === 'VIEWER' ? (
+            <div className="py-16 text-center rounded-3xl bg-[#141822] border-2 border-gray-700 p-8 space-y-3 max-w-lg mx-auto my-12 animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/20 text-amber-400 flex items-center justify-center mx-auto mb-2">
+                <Ticket className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-white">Giriş Hakları Yönetimi</h3>
+              <p className="text-xs text-gray-400">
+                Gözlemci hesabıyla oturum açtığınız için pist giriş hakları ve bakiye tahsilat yönetimini görüntüleme yetkiniz kısıtlanmıştır.
+              </p>
+              <button
+                onClick={() => setActiveTab('pitlane')}
+                className="mt-4 px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs"
+              >
+                10 Box Garajlara Dön
+              </button>
+            </div>
+          ) : (
+            <div className="animate-fade-in">
+              <ErrorBoundary>
+                <RentManagement 
+                  bikes={bikes} 
+                  currentUser={currentUser}
+                  onUpdateBike={handleUpdateBike}
+                  onSelectBike={(b) => setSelectedBike(b)}
+                  onOpenTrackEntry={(b) => setTrackEntryBike(b)}
+                  onOpenAddEntries={(b) => setAddEntriesBike(b)}
+                />
+              </ErrorBoundary>
+            </div>
+          )
         )}
 
         {/* TAB 4: QR KAREKOD YAZDIRMA (PRINT VIEW) */}

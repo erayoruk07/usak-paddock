@@ -24,15 +24,16 @@ export default function RentManagement({
   onOpenTrackEntry,
   onOpenAddEntries
 }) {
-  const isViewer = currentUser?.role === 'VIEWER';
+  const isViewer = currentUser?.role?.toUpperCase() === 'VIEWER';
   
   // Filtre: 'ALL' (Tümü - Varsayılan), 'EXPIRED' (Hakkı Bitenler), 'ACTIVE' (Hakkı Olanlar)
   const [filter, setFilter] = useState('ALL');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedBikeForPayment, setSelectedBikeForPayment] = useState(null);
 
-  const expiredBikes = bikes.filter(b => (b.remainingEntries ?? 0) <= 0);
-  const activeBikes = bikes.filter(b => (b.remainingEntries ?? 0) > 0);
+  const safeBikes = Array.isArray(bikes) ? bikes : [];
+  const expiredBikes = safeBikes.filter(b => (b.remainingEntries ?? 0) <= 0);
+  const activeBikes = safeBikes.filter(b => (b.remainingEntries ?? 0) > 0);
 
   // WhatsApp'tan Hak Bitti Uyarısı Gönder (Güvenli & Türkiye Formatı Destekli)
   const sendWhatsAppReminder = (bike) => {
@@ -91,7 +92,7 @@ export default function RentManagement({
   };
 
   // Filtreleme mantığı: Hem durum filtresi hem de isim/metin araması
-  let baseBikes = bikes;
+  let baseBikes = safeBikes;
   if (filter === 'EXPIRED') baseBikes = expiredBikes;
   else if (filter === 'ACTIVE') baseBikes = activeBikes;
 
@@ -99,14 +100,14 @@ export default function RentManagement({
     if (!searchTerm.trim()) return true;
     const q = searchTerm.toLowerCase();
     return (
-      (bike.owner?.fullName && bike.owner.fullName.toLowerCase().includes(q)) ||
-      (bike.raceNumber && bike.raceNumber.toLowerCase().includes(q)) ||
-      (bike.garageNo && bike.garageNo.toLowerCase().includes(q)) ||
-      (bike.brand && bike.brand.toLowerCase().includes(q)) ||
-      (bike.model && bike.model.toLowerCase().includes(q)) ||
-      (bike.chassisNumber && bike.chassisNumber.toLowerCase().includes(q)) ||
-      (bike.owner?.phone && bike.owner.phone.includes(q)) ||
-      (bike.owner?.bloodType && bike.owner.bloodType.toLowerCase().includes(q))
+      (bike.owner?.fullName && String(bike.owner.fullName).toLowerCase().includes(q)) ||
+      (bike.raceNumber && String(bike.raceNumber).toLowerCase().includes(q)) ||
+      (bike.garageNo && String(bike.garageNo).toLowerCase().includes(q)) ||
+      (bike.brand && String(bike.brand).toLowerCase().includes(q)) ||
+      (bike.model && String(bike.model).toLowerCase().includes(q)) ||
+      (bike.chassisNumber && String(bike.chassisNumber).toLowerCase().includes(q)) ||
+      (bike.owner?.phone && String(bike.owner.phone).includes(q)) ||
+      (bike.owner?.bloodType && String(bike.owner.bloodType).toLowerCase().includes(q))
     );
   });
 

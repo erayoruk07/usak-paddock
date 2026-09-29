@@ -20,7 +20,8 @@ export default function Navbar({
   onOpenAdminModal,
   onLogout
 }) {
-  const isViewer = currentUser?.role === 'VIEWER';
+  const isViewer = currentUser?.role?.toUpperCase() === 'VIEWER';
+  const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN' || currentUser?.username?.toLowerCase() === 'admin';
 
   return (
     <header className="sticky top-0 z-40 bg-[#0B0F17]/95 backdrop-blur-md border-b border-gray-800 no-print">
@@ -123,7 +124,7 @@ export default function Navbar({
             )}
 
             {/* Yeni Motor Ekle - Sadece ADMIN görebilir */}
-            {currentUser?.role !== 'VIEWER' && (
+            {!isViewer && (
               <button
                 onClick={onOpenAddModal}
                 className="flex items-center space-x-1.5 px-3 py-2 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-xl shadow-md transition transform active:scale-95"
@@ -134,7 +135,7 @@ export default function Navbar({
             )}
 
             {/* Kullanıcı / Admin Yönetimi Butonu */}
-            {currentUser?.role === 'ADMIN' ? (
+            {isAdmin ? (
               <button
                 onClick={onOpenAdminModal}
                 className="p-2 sm:px-2.5 sm:py-2 rounded-xl bg-gray-900 hover:bg-gray-800 text-gray-200 border border-cyan-800/80 font-bold text-xs flex items-center space-x-1.5 transition"
