@@ -124,7 +124,7 @@ export default function BikeDetailModal({
     const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
     const newHistory = [
-      { date: dateStr, note: "Piste giriş yapıldı" },
+      { date: dateStr, note: "Serbest Antrenman" },
       ...(bike.entryHistory || [])
     ];
 
@@ -134,7 +134,7 @@ export default function BikeDetailModal({
       entryHistory: newHistory
     }, {
       actionType: 'TRACK_ENTRY',
-      note: `Piste giriş yapıldı (-1 Hak). Kalan Hak: ${remaining - 1}`
+      note: `Serbest Antrenman (-1 Hak). Kalan Hak: ${remaining - 1}`
     });
 
     alert(`🏎️ Piste giriş onaylandı. Kalan Pist Giriş Hakkı: ${remaining - 1}`);
@@ -223,11 +223,11 @@ export default function BikeDetailModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-2xl bg-[#151922] border-2 border-gray-700 rounded-3xl shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-2xl bg-[#151922] border-2 border-gray-700 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
         {/* Üst Fotoğraf ve Başlık */}
-        <div className="relative h-60 w-full bg-gray-900">
+        <div className="relative h-44 sm:h-60 w-full bg-gray-900 shrink-0">
           <img 
             src={bike.photoUrl} 
             alt={bike.model}
@@ -292,51 +292,51 @@ export default function BikeDetailModal({
         </div>
 
         {/* 4 ANA BÜYÜK SEKME BUTONU */}
-        <div className="grid grid-cols-4 border-b-2 border-gray-700 bg-gray-900 text-center">
+        <div className="grid grid-cols-4 border-b-2 border-gray-700 bg-gray-900 text-center shrink-0">
           <button
             onClick={() => setActiveTab('parts')}
-            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+            className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
               activeTab === 'parts' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Wrench className="w-4 h-4" />
-            <span>Parçalar</span>
+            <Wrench className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">Parçalar</span>
           </button>
 
           <button
             onClick={() => setActiveTab('entries')}
-            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+            className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
               activeTab === 'entries' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <Play className="w-4 h-4" />
-            <span>Pist Girişi ({remaining})</span>
+            <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">Pist ({remaining})</span>
           </button>
 
           {/* Sürücü & Araç Bilgileri */}
           <button
             onClick={() => setActiveTab('owner')}
-            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+            className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
               activeTab === 'owner' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <User className="w-4 h-4" />
-            <span>Sahibi & Araç</span>
+            <User className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">Sahibi</span>
           </button>
 
           <button
             onClick={() => setActiveTab('qr')}
-            className={`py-3 px-2 font-black text-xs sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-1 sm:space-y-0 sm:space-x-1.5 transition ${
+            className={`py-2.5 sm:py-3 px-1.5 sm:px-2 font-black text-[11px] sm:text-sm flex flex-col sm:flex-row items-center justify-center space-y-0.5 sm:space-y-0 sm:space-x-1.5 transition ${
               activeTab === 'qr' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'
             }`}
           >
-            <QrCode className="w-4 h-4" />
-            <span>Karekod</span>
+            <QrCode className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            <span className="truncate">Karekod</span>
           </button>
         </div>
 
         {/* SEKME İÇERİKLERİ */}
-        <div className="p-4 sm:p-6 max-h-[50vh] overflow-y-auto">
+        <div className="p-3.5 sm:p-6 overflow-y-auto flex-1 min-h-0">
           
           {/* 1. SEKME: TAKILI PARÇALAR */}
           {activeTab === 'parts' && (
@@ -438,20 +438,20 @@ export default function BikeDetailModal({
                 </div>
 
                 {!isViewer ? (
-                  <div className="flex gap-3 pt-2">
+                  <div className="flex gap-2 sm:gap-3 pt-1.5 sm:pt-2">
                     <button
                       onClick={() => {
                         if (onOpenTrackEntry) onOpenTrackEntry(bike);
                         else handleUseEntry();
                       }}
                       disabled={isExpired}
-                      className={`flex-1 py-3.5 px-4 rounded-2xl font-black text-sm flex items-center justify-center space-x-2 shadow-lg transition ${
+                      className={`flex-1 py-3 px-3 sm:py-3.5 sm:px-4 rounded-xl sm:rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 shadow-lg transition ${
                         isExpired 
                           ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
                           : 'bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white active:scale-95 shadow-red-600/30'
                       }`}
                     >
-                      <Play className="w-5 h-5 fill-current" />
+                      <Play className="w-4 h-4 sm:w-5 sm:h-5 fill-current shrink-0" />
                       <span>Piste Giriş Yap</span>
                     </button>
 
@@ -460,9 +460,9 @@ export default function BikeDetailModal({
                         if (onOpenAddEntries) onOpenAddEntries(bike);
                         else handleAddEntries();
                       }}
-                      className="py-3.5 px-5 rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black text-sm flex items-center justify-center space-x-2 shadow"
+                      className="py-3 px-3.5 sm:py-3.5 sm:px-5 rounded-xl sm:rounded-2xl bg-amber-600 hover:bg-amber-500 text-white font-black text-xs sm:text-sm flex items-center justify-center space-x-1.5 sm:space-x-2 shadow shrink-0"
                     >
-                      <Plus className="w-5 h-5" />
+                      <Plus className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
                       <span>+ Hak Yükle</span>
                     </button>
                   </div>

@@ -361,6 +361,7 @@ export default function App() {
   const handleConfirmAddEntries = async (count, paymentMethod, paymentNote, amount = null) => {
     if (!addEntriesBike) return;
     const remaining = addEntriesBike.remainingEntries ?? 0;
+    const totalGranted = addEntriesBike.totalEntriesGranted ?? remaining;
     const finalAmount = (amount !== null && amount !== undefined) 
       ? Number(amount) 
       : (count === 5 ? 7000 : count === 10 ? 14000 : count === 1 ? 1500 : count * 1400);
