@@ -26,7 +26,7 @@ import {
 import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
-import { openWhatsAppMessage } from '../utils/whatsappHelper';
+import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from '../utils/whatsappHelper';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -160,7 +160,7 @@ export default function BikeDetailModal({
 
   // WhatsApp hatırlatması (Güvenli & Türkiye Formatı Destekli)
   const handleSendWhatsApp = () => {
-    const text = `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni giriş paketi tanımlamak için bizimle iletişime geçebilirsiniz. İyi günler dileriz. - Uşak Paddock Yönetimi`;
+    const text = getZeroEntriesWhatsAppMessage(bike);
     openWhatsAppMessage(bike.owner?.phone, text);
   };
 
@@ -183,7 +183,7 @@ export default function BikeDetailModal({
       owner: {
         ...bike.owner,
         fullName: formatTitleCaseTurkish(vehicleForm.ownerName.trim()) || bike.owner?.fullName,
-        phone: vehicleForm.ownerPhone.trim() || bike.owner?.phone,
+        phone: vehicleForm.ownerPhone.trim(),
         bloodType: vehicleForm.bloodType || bike.owner?.bloodType,
         emergencyName: formatTitleCaseTurkish(vehicleForm.emergencyName.trim()),
         emergencyRelation: vehicleForm.emergencyRelation || 'Eşi',
@@ -652,7 +652,7 @@ export default function BikeDetailModal({
                         type="text"
                         value={vehicleForm.ownerPhone}
                         onChange={(e) => setVehicleForm({ ...vehicleForm, ownerPhone: formatPhoneNumber(e.target.value) })}
-                        required
+                        placeholder="0 (5XX) XXX XX XX"
                         className="w-full bg-gray-900 border border-gray-700 rounded-xl p-2.5 text-emerald-400 font-mono font-bold focus:border-amber-500 focus:outline-none"
                       />
                     </div>

@@ -83,31 +83,32 @@ export const RELATIONS = [
   "Eşi", "Kardeşi", "Babası", "Annesi", "Arkadaşı", "Takım Arkadaşı", "Diğer"
 ];
 
-// Telefon formatlayıcı: 0 (5XX) XXX XX XX
+// Telefon formatlayıcı: 0 (5XX) XXX XX XX (Silme ve düzenlemeyi engellemeyen akıcı format)
 export function formatPhoneNumber(value) {
-  if (!value) return "0 (";
-  let numbers = value.replace(/\D/g, "");
-  
-  if (!numbers.startsWith("0")) {
-    numbers = "0" + numbers;
+  if (!value) return '';
+  const digits = String(value).replace(/\D/g, '');
+  if (!digits) return '';
+  if (digits === '0') {
+    return value.trim() === '0' ? '0' : '';
   }
-  
+
+  let numbers = digits;
+  if (!numbers.startsWith('0')) {
+    numbers = '0' + numbers;
+  }
   numbers = numbers.substring(0, 11);
 
-  let formatted = "0";
-  if (numbers.length > 1) {
-    formatted += " (" + numbers.substring(1, 4);
+  if (numbers.length <= 1) return '';
+  if (numbers.length <= 4) {
+    return `0 (${numbers.substring(1)}`;
   }
-  if (numbers.length >= 4) {
-    formatted += ") " + numbers.substring(4, 7);
+  if (numbers.length <= 7) {
+    return `0 (${numbers.substring(1, 4)}) ${numbers.substring(4)}`;
   }
-  if (numbers.length >= 7) {
-    formatted += " " + numbers.substring(7, 9);
+  if (numbers.length <= 9) {
+    return `0 (${numbers.substring(1, 4)}) ${numbers.substring(4, 7)} ${numbers.substring(7)}`;
   }
-  if (numbers.length >= 9) {
-    formatted += " " + numbers.substring(9, 11);
-  }
-  return formatted;
+  return `0 (${numbers.substring(1, 4)}) ${numbers.substring(4, 7)} ${numbers.substring(7, 9)} ${numbers.substring(9, 11)}`;
 }
 
 // İsim ve metin ifadelerinde ilk harfi otomatik küçük harf yapan formatlayıcı (Türkçe uyumlu)

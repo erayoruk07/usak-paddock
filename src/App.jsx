@@ -50,7 +50,7 @@ import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
 import TrackEntryModal from './components/TrackEntryModal';
 import AddEntriesModal from './components/AddEntriesModal';
-import { openWhatsAppMessage } from './utils/whatsappHelper';
+import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from './utils/whatsappHelper';
 
 export default function App() {
   // Giriş ve Yetkili Durumu
@@ -412,7 +412,7 @@ export default function App() {
 
   // WhatsApp Hatırlatma (Güvenli ve Türkiye Formatı Destekli)
   const handleQuickWhatsApp = (bike) => {
-    const text = `Sayın ${bike.owner?.fullName}, ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni seans paketi yüklemek için bizimle iletişime geçebilirsiniz. - Uşak Paddock Yönetimi`;
+    const text = getZeroEntriesWhatsAppMessage(bike);
     openWhatsAppMessage(bike.owner?.phone, text);
   };
 

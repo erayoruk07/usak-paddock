@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import PaymentSummaryModal from './PaymentSummaryModal';
-import { openWhatsAppMessage } from '../utils/whatsappHelper';
+import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from '../utils/whatsappHelper';
 
 export default function RentManagement({ 
   bikes, 
@@ -36,7 +36,7 @@ export default function RentManagement({
 
   // WhatsApp'tan Hak Bitti Uyarısı Gönder (Güvenli & Türkiye Formatı Destekli)
   const sendWhatsAppReminder = (bike) => {
-    const text = `Sayın ${bike.owner?.fullName}, Uşak Yarış Pisti ${bike.garageNo} garajındaki #${bike.raceNumber} yarış numaralı ${bike.brand} ${bike.model} motorunuzun pist giriş hakkı tükenmiştir (0 Hak). Yeni 5 seanslık paket yüklemek için pist ofisimizle iletişime geçebilirsiniz. - Uşak Paddock Yönetimi`;
+    const text = getZeroEntriesWhatsAppMessage(bike);
     openWhatsAppMessage(bike.owner?.phone, text);
   };
 
