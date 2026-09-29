@@ -105,7 +105,10 @@ export default function App() {
         if (isMounted) {
           if (remoteAdmins && remoteAdmins.length > 0) setAdmins(remoteAdmins);
           if (remoteGarages && remoteGarages.length > 0) setGarages(remoteGarages);
-          if (remoteBikes && remoteBikes.length > 0) setBikes(remoteBikes);
+          if (Array.isArray(remoteBikes)) {
+            setBikes(remoteBikes);
+            saveBikes(remoteBikes);
+          }
         }
       } catch (err) {
         console.warn('[App DB sync error]', err);

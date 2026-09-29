@@ -111,7 +111,7 @@ export function formatPhoneNumber(value) {
 }
 
 export const STORAGE_KEY_GARAGES = "usak_pist_garage_boxes_v3";
-export const STORAGE_KEY_BIKES = "usak_pist_garage_bikes_v4";
+export const STORAGE_KEY_BIKES = "usak_pist_garage_bikes_v5";
 
 export function loadGarages() {
   try {
@@ -133,14 +133,11 @@ export function saveGarages(garages) {
 
 export function loadBikes() {
   try {
-    // Eski test verilerini tarayıcı hafızasından otomatik temizle
+    // Eski test verilerini tarayıcı/mobil hafızasından kesin olarak temizle
     if (typeof window !== 'undefined') {
-      if (localStorage.getItem("usak_pist_garage_bikes_v3")) {
-        localStorage.removeItem("usak_pist_garage_bikes_v3");
-      }
-      if (localStorage.getItem("usak_pist_garage_bikes_v2")) {
-        localStorage.removeItem("usak_pist_garage_bikes_v2");
-      }
+      localStorage.removeItem("usak_pist_garage_bikes_v4");
+      localStorage.removeItem("usak_pist_garage_bikes_v3");
+      localStorage.removeItem("usak_pist_garage_bikes_v2");
     }
     const saved = localStorage.getItem(STORAGE_KEY_BIKES);
     if (saved) return JSON.parse(saved);
