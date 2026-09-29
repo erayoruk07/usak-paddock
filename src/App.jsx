@@ -49,7 +49,6 @@ import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
 import TrackEntryModal from './components/TrackEntryModal';
 import AddEntriesModal from './components/AddEntriesModal';
-import SupabaseConfigModal from './components/SupabaseConfigModal';
 
 export default function App() {
   // Giriş ve Yetkili Durumu
@@ -71,7 +70,6 @@ export default function App() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [isDbConfigOpen, setIsDbConfigOpen] = useState(false);
   const [printBikeTarget, setPrintBikeTarget] = useState(null);
   const [addBikeTargetGarageId, setAddBikeTargetGarageId] = useState('box-1');
   
@@ -134,10 +132,6 @@ export default function App() {
   useEffect(() => {
     const handlePopState = () => {
       // 1. Açık herhangi bir modal varsa kapat
-      if (isDbConfigOpen) {
-        setIsDbConfigOpen(false);
-        return;
-      }
       if (selectedBike) {
         setSelectedBike(null);
         return;
@@ -183,7 +177,6 @@ export default function App() {
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, [
-    isDbConfigOpen,
     selectedBike, 
     trackEntryBike, 
     addEntriesBike, 
@@ -476,8 +469,6 @@ export default function App() {
         currentUser={currentUser}
         onOpenAdminModal={() => setIsAdminModalOpen(true)}
         onLogout={handleLogout}
-        dbStatus={dbStatus}
-        onOpenDbConfig={() => setIsDbConfigOpen(true)}
       />
 
       {/* Ana Gövde */}
@@ -710,14 +701,6 @@ export default function App() {
           bike={addEntriesBike}
           onClose={() => setAddEntriesBike(null)}
           onConfirm={handleConfirmAddEntries}
-        />
-      )}
-
-      {/* 8. Canlı Bulut Veritabanı (Supabase) ve Cihaz Senkronizasyon Modalı */}
-      {isDbConfigOpen && (
-        <SupabaseConfigModal
-          dbStatus={dbStatus}
-          onClose={() => setIsDbConfigOpen(false)}
         />
       )}
 

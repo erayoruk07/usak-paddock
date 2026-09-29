@@ -7,8 +7,7 @@ import {
   Bell, 
   PlusCircle, 
   Shield, 
-  LogOut,
-  Database
+  LogOut
 } from 'lucide-react';
 
 export default function Navbar({ 
@@ -19,9 +18,7 @@ export default function Navbar({
   onOpenNotifications,
   currentUser,
   onOpenAdminModal,
-  onLogout,
-  dbStatus,
-  onOpenDbConfig
+  onLogout
 }) {
   return (
     <header className="sticky top-0 z-40 bg-[#0B0F17]/95 backdrop-blur-md border-b border-gray-800 no-print">
@@ -117,23 +114,6 @@ export default function Navbar({
                   {overdueCount}
                 </span>
               )}
-            </button>
-
-            {/* Canlı Bulut DB Durum & Bağlantı Butonu */}
-            <button
-              onClick={onOpenDbConfig}
-              className={`p-2 sm:px-2.5 sm:py-2 rounded-xl border text-xs font-bold flex items-center space-x-1.5 transition ${
-                dbStatus === 'connected'
-                  ? 'bg-emerald-950/60 border-emerald-700/60 text-emerald-400 hover:bg-emerald-950'
-                  : 'bg-amber-950/60 border-amber-600/70 text-amber-300 hover:bg-amber-950 animate-pulse'
-              }`}
-              title={dbStatus === 'connected' ? 'Canlı Bulut Veritabanı (Supabase) Aktif' : 'Bulut Veritabanı Bağlı Değil - PC & Mobil senkronizasyonu için tıklayın'}
-            >
-              <Database className="w-3.5 h-3.5" />
-              <span className="hidden xl:inline">
-                {dbStatus === 'connected' ? 'Bulut DB' : 'DB Bağla'}
-              </span>
-              <span className={`w-2 h-2 rounded-full ${dbStatus === 'connected' ? 'bg-emerald-400' : 'bg-amber-400'}`}></span>
             </button>
 
             {/* Yeni Motor Ekle - Sadece ADMIN görebilir */}
