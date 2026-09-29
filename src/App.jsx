@@ -620,7 +620,7 @@ export default function App() {
               </span>
             </div>
             <span className="text-gray-600">•</span>
-            <span>Uşak Yarış Pisti • 10 Paddock Box</span>
+            <span>Uşak Yarış Pisti •</span>
           </div>
 
           <div className="text-center sm:text-right text-[11px] text-gray-400">
