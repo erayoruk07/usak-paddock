@@ -1,3 +1,8 @@
+import fs from 'fs';
+import path from 'path';
+import sharp from 'sharp';
+
+const masterSvg = `
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <!-- Arka Plan Radyal ve Doğrusal Gradyanlar -->
@@ -144,3 +149,84 @@
     </text>
   </g>
 </svg>
+`;
+
+async function generate() {
+  const publicDir = path.resolve('public');
+  if (!fs.existsSync(publicDir)) {
+    fs.mkdirSync(publicDir, { recursive: true });
+  }
+
+  // 1. Master SVG dosyasını kaydet
+  const svgPath = path.join(publicDir, 'logo.svg');
+  fs.writeFileSync(svgPath, masterSvg.trim(), 'utf8');
+  fs.writeFileSync(path.join(publicDir, 'favicon.svg'), masterSvg.trim(), 'utf8');
+  console.log('✓ Master SVG logo kaydedildi.');
+
+  const svgBuffer = Buffer.from(masterSvg);
+
+  // 2. 512x512 PWA Icon
+  await sharp(svgBuffer)
+    .resize(512, 512)
+    .png()
+    .toFile(path.join(publicDir, 'pwa-512x512.png'));
+  console.log('✓ pwa-512x512.png oluşturuldu.');
+
+  // 3. 192x192 PWA Icon
+  await sharp(svgBuffer)
+    .resize(192, 192)
+    .png()
+    .toFile(path.join(publicDir, 'pwa-192x192.png'));
+  console.log('✓ pwa-192x192.png oluşturuldu.');
+
+  // 4. 180x180 Apple Touch Icon (iOS Safari Ana Ekrana Ekle)
+  await sharp(svgBuffer)
+    .resize(180, 180)
+    .png()
+    .toFile(path.join(publicDir, 'apple-touch-icon.png'));
+  console.log('✓ apple-touch-icon.png (180x180 iOS) oluşturuldu.');
+
+  // 5. 32x32 Favicon
+  await sharp(svgBuffer)
+    .resize(32, 32)
+    .png()
+    .toFile(path.join(publicDir, 'favicon-32x32.png'));
+  console.log('✓ favicon-32x32.png oluşturuldu.');
+
+  // 6. manifest.json oluştur
+  const manifest = {
+    name: "Uşak Yarış Pisti • Paddock Garajı",
+    short_name: "Uşak Paddock",
+    description: "Uşak Yarış Pisti 10 Paddock Box Garaj ve Motor Donanım Takip Sistemi",
+    start_url: "/",
+    display: "standalone",
+    orientation: "portrait",
+    background_color: "#0B0F17",
+    theme_color: "#DC2626",
+    icons: [
+      {
+        src: "/pwa-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/pwa-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any"
+      },
+      {
+        src: "/pwa-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable"
+      }
+    ]
+  };
+
+  fs.writeFileSync(path.join(publicDir, 'manifest.json'), JSON.stringify(manifest, null, 2), 'utf8');
+  console.log('✓ manifest.json oluşturuldu.');
+}
+
+generate().catch(console.error);

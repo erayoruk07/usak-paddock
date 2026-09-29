@@ -1,0 +1,30 @@
+{
+  "name": "Uşak Yarış Pisti • Paddock Garajı",
+  "short_name": "Uşak Paddock",
+  "description": "Uşak Yarış Pisti 10 Paddock Box Garaj ve Motor Donanım Takip Sistemi",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0B0F17",
+  "theme_color": "#DC2626",
+  "icons": [
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
