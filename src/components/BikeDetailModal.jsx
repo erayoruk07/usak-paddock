@@ -28,6 +28,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
 import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from '../utils/whatsappHelper';
+import { DateSelectPicker } from './CustomDateSelectors';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -584,14 +585,13 @@ export default function BikeDetailModal({
                     </div>
 
                     {/* Garaj Kayıt Tarihi */}
-                    <div>
-                      <label className="text-[10px] font-bold text-purple-400 block mb-1 uppercase">Garaj Kayıt Tarihi</label>
-                      <input
-                        type="date"
+                    <div className="col-span-full sm:col-span-1">
+                      <DateSelectPicker
+                        label="Garaj Kayıt Tarihi"
                         value={vehicleForm.garageJoinDate}
-                        onChange={(e) => setVehicleForm({ ...vehicleForm, garageJoinDate: e.target.value })}
-                        className="w-full bg-gray-900 border border-purple-500/70 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
-                        required
+                        onChange={(val) => setVehicleForm({ ...vehicleForm, garageJoinDate: val })}
+                        color="purple"
+                        showPresets={true}
                       />
                     </div>
 

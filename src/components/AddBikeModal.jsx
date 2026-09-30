@@ -22,6 +22,7 @@ import {
   formatTitleCaseTurkish
 } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
+import { DateSelectPicker } from './CustomDateSelectors';
 
 // Hızlı Pist Donanımı Önerileri
 const POPULAR_TRACK_PARTS = [
@@ -306,19 +307,17 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                   ))}
                 </select>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-purple-300 font-bold mb-1">
-                  Garaj Kayıt Tarihi
-                </label>
-                <input
-                  type="date"
-                  value={formData.garageJoinDate}
-                  onChange={(e) => setFormData({ ...formData, garageJoinDate: e.target.value })}
-                  className="w-full bg-black border-2 border-purple-500/60 focus:border-purple-400 rounded-xl px-3 py-2 text-white font-bold text-xs outline-none"
-                  required
-                />
-              </div>
+            {/* Garaj Kayıt Tarihi (Üyelik & Kira Başlangıcı) */}
+            <div className="w-full pt-2 border-t border-gray-800">
+              <DateSelectPicker
+                label="Garaj Kayıt Tarihi (Üyelik & Kira Başlangıcı)"
+                value={formData.garageJoinDate}
+                onChange={(val) => setFormData({ ...formData, garageJoinDate: val })}
+                color="purple"
+                showPresets={true}
+              />
             </div>
           </div>
 

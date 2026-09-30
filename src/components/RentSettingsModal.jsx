@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Settings, Banknote, Calendar, CreditCard, CheckCircle2, History, AlertCircle } from 'lucide-react';
 import { formatDateTR } from '../utils/garageRentHelper';
+import { DateSelectPicker } from './CustomDateSelectors';
 
 export default function RentSettingsModal({ 
   currentSettings, 
@@ -115,17 +116,13 @@ export default function RentSettingsModal({
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-gray-300 mb-1 flex items-center">
-                  <Calendar className="w-3.5 h-3.5 mr-1 text-purple-400" />
-                  Yürürlük Tarihi
-                </label>
-                <input 
-                  type="date"
+              <div className="col-span-full pt-1 border-t border-purple-500/20">
+                <DateSelectPicker
+                  label="Yeni Fiyatın Yürürlük Başlangıç Tarihi"
                   value={effectiveDate}
-                  onChange={(e) => setEffectiveDate(e.target.value)}
-                  className="w-full bg-black border-2 border-gray-700 focus:border-purple-500 rounded-xl px-3 py-2.5 text-xs text-white font-bold outline-none"
-                  required
+                  onChange={(val) => setEffectiveDate(val)}
+                  color="purple"
+                  showPresets={true}
                 />
               </div>
             </div>

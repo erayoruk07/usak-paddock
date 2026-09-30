@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, Banknote, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
+import { DateSelectPicker } from './CustomDateSelectors';
 
 export default function EditBikeRentModal({ 
   bike, 
@@ -69,19 +70,15 @@ export default function EditBikeRentModal({
           
           {/* Garaj Üyelik / Giriş Tarihi */}
           <div>
-            <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider mb-1.5 flex items-center">
-              <Calendar className="w-3.5 h-3.5 mr-1 text-purple-400" />
-              Garaj Üyelik / Başlangıç Tarihi
-            </label>
-            <input 
-              type="date"
+            <DateSelectPicker
+              label="Garaj Üyelik / Başlangıç Tarihi"
               value={joinDate}
-              onChange={(e) => setJoinDate(e.target.value)}
-              className="w-full bg-black border-2 border-gray-700 focus:border-purple-500 rounded-xl px-3.5 py-2.5 text-sm text-white font-bold outline-none"
-              required
+              onChange={(val) => setJoinDate(val)}
+              color="purple"
+              showPresets={true}
             />
             <p className="text-[11px] text-gray-500 mt-1">
-              Pilotun motosikletini garaja ilk getirdiği üyelik tarihidir.
+              Pilotun motosikletini garaja ilk getirdiği üyelik tarihidir (Kira hesabı bu günden başlar).
             </p>
           </div>
 
