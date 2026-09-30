@@ -10,8 +10,6 @@ import {
   MessageCircle, 
   Receipt, 
   ChevronRight, 
-  Heart, 
-  Phone, 
   Edit3,
   Sparkles
 } from 'lucide-react';
@@ -47,16 +45,12 @@ export default function RentSummaryModal({
                 <span className="text-[10px] text-purple-400 font-black tracking-widest uppercase">
                   {bike.garageNo} • GARAJ KİRA ÖZETİ
                 </span>
-                <span className="px-2 py-0.5 rounded-lg bg-red-950 border border-red-700 text-red-400 font-black text-[10px] flex items-center">
-                  <Heart className="w-2.5 h-2.5 mr-1 fill-red-500 text-red-500" />
-                  {bike.owner?.bloodType || "Kan Grubu Yok"}
-                </span>
               </div>
               <h3 className="text-base sm:text-xl font-black text-white truncate">
                 {bike.owner?.fullName}
               </h3>
-              <p className="text-[11px] sm:text-xs text-gray-300 font-semibold truncate">
-                {bike.brand} {bike.model} • Tel: {bike.owner?.phone}
+              <p className="text-[11px] sm:text-xs text-gray-400 font-medium truncate">
+                Garaj Kayıt: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>

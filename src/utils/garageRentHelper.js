@@ -211,7 +211,8 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
   const currentIndex = periodToIndex(currentPeriod.year, currentPeriod.month);
 
   // 2. Garaj Başlangıç Dönemi (Kira hangi ay/yıldan saymaya başlayacak?)
-  const startPeriod = parsePeriod(bike.garageStartPeriod || bike.garageJoinDate || bike.createdAt || '2026-01-15');
+  const todayPeriodIso = new Date().toISOString().substring(0, 7);
+  const startPeriod = parsePeriod(bike.garageStartPeriod || bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : todayPeriodIso));
   const startIndex = periodToIndex(startPeriod.year, startPeriod.month);
   const startPeriodLabel = formatPeriod(startPeriod.year, startPeriod.month);
 

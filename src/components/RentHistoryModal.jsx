@@ -31,7 +31,7 @@ export default function RentHistoryModal({
                 {bike.owner?.fullName}
               </h3>
               <p className="text-xs text-gray-400 truncate">
-                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
+                Garaj Kayıt: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>

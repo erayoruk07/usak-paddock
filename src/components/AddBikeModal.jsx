@@ -157,12 +157,15 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
       ? formatTitleCaseTurkish(formData.emergencyName.trim()) 
       : '';
 
+    const startPeriod = formData.garageStartPeriod || (formData.garageJoinDate ? formData.garageJoinDate.substring(0, 7) : new Date().toISOString().substring(0, 7));
+    const joinDate = formData.garageJoinDate || `${startPeriod}-01`;
+
     const newBike = {
       id: bikeId,
       garageId: targetGarage ? targetGarage.id : 'box-1',
       garageNo: targetGarage ? targetGarage.name : 'Paddock Box 1',
-      garageStartPeriod: formData.garageStartPeriod || (formData.garageJoinDate ? formData.garageJoinDate.substring(0, 7) : '2026-10'),
-      garageJoinDate: formData.garageJoinDate || '2026-10-01',
+      garageStartPeriod: startPeriod,
+      garageJoinDate: joinDate,
       raceNumber: formData.raceNumber || '99',
       brand: formData.brand.trim(),
       model: formData.model.trim(),
@@ -182,7 +185,14 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
       paymentAmount: 0,
       remainingEntries: 0, // Pist giriş hakkı sonradan bağımsız hak yükle pop-up'ından eklenir
       totalEntriesGranted: 0,
-      entryHistory: [],
+      entryHistory: [
+        {
+          type: 'RENT_CONFIG',
+          garageStartPeriod: startPeriod,
+          garageJoinDate: joinDate,
+          customMonthlyRent: null
+        }
+      ],
       equippedParts: partsList
     };
 

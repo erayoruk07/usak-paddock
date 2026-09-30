@@ -56,22 +56,37 @@ export function bikeToDb(b) {
 }
 
 export function bikeFromDb(row) {
-  const rawHistory = Array.isArray(row.entry_history) ? row.entry_history : [];
-  const rentConfig = rawHistory.find(item => item?.type === 'RENT_CONFIG');
-  // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kaydını filtreleyelim
-  const cleanEntryHistory = rawHistory.filter(item => item?.type !== 'RENT_CONFIG');
+  let rawHistory = [];
+  if (Array.isArray(row.entry_history)) {
+    rawHistory = row.entry_history;
+  } else if (typeof row.entry_history === 'string' && row.entry_history.trim().startsWith('[')) {
+    try {
+      rawHistory = JSON.parse(row.entry_history);
+    } catch {}
+  } else if (Array.isArray(row.entryHistory)) {
+    rawHistory = row.entryHistory;
+  }
 
+  const rentConfig = Array.isArray(rawHistory) ? rawHistory.find(item => item?.type === 'RENT_CONFIG') : null;
+  // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kaydını filtreleyelim
+  const cleanEntryHistory = Array.isArray(rawHistory) ? rawHistory.filter(item => item?.type !== 'RENT_CONFIG') : [];
+
+  const todayStr = new Date().toISOString().split('T')[0];
   const garageJoinDate = rentConfig?.garageJoinDate 
+    || row.garageJoinDate
     || row.garage_join_date 
-    || (row.created_at ? row.created_at.split('T')[0] : '2026-01-15');
+    || (row.created_at ? row.created_at.split('T')[0] : todayStr);
 
   const garageStartPeriod = rentConfig?.garageStartPeriod 
-    || (garageJoinDate ? garageJoinDate.substring(0, 7) : '2026-01');
+    || row.garageStartPeriod
+    || (garageJoinDate ? garageJoinDate.substring(0, 7) : todayStr.substring(0, 7));
 
   // Eğer rentConfig varsa customMonthlyRent'i doğrudan al (null ise null kalmalı, yani Genel Tarifeyi Kullan)
   let customMonthlyRent = null;
   if (rentConfig) {
     customMonthlyRent = rentConfig.customMonthlyRent !== undefined ? rentConfig.customMonthlyRent : null;
+  } else if (row.customMonthlyRent !== undefined) {
+    customMonthlyRent = row.customMonthlyRent;
   } else if (row.custom_monthly_rent !== undefined) {
     customMonthlyRent = row.custom_monthly_rent;
   }

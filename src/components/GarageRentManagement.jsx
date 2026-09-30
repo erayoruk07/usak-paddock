@@ -13,7 +13,6 @@ import {
   Calendar, 
   Edit3, 
   Banknote,
-  Heart,
   TrendingUp,
   Tag,
   Eye,
@@ -370,11 +369,6 @@ export default function GarageRentManagement({
                     <span className="text-base sm:text-lg font-black text-white group-hover:text-purple-300 transition">
                       {bike.owner?.fullName}
                     </span>
-                    {/* Kan Grubu Rozeti */}
-                    <span className="px-2 py-0.5 rounded-lg bg-red-950 border border-red-700 text-red-400 font-black text-xs flex items-center">
-                      <Heart className="w-3 h-3 mr-1 fill-red-500 text-red-500" />
-                      {bike.owner?.bloodType || "Kan Grubu Yok"}
-                    </span>
                     {rentInfo.isCustomRent && (
                       <span className="px-2 py-0.5 rounded-md bg-purple-950 border border-purple-700 text-purple-300 font-bold text-[10px] flex items-center">
                         <Tag className="w-3 h-3 mr-1" />
@@ -386,17 +380,15 @@ export default function GarageRentManagement({
                     </span>
                   </div>
 
-                  <div className="text-xs sm:text-sm text-gray-300 font-semibold mt-0.5">
-                    {bike.garageNo} • {bike.brand} {bike.model}
+                  <div className="text-xs sm:text-sm text-purple-300 font-semibold mt-0.5 flex items-center">
+                    <Building2 className="w-3.5 h-3.5 mr-1 text-purple-400" />
+                    {bike.garageNo}
                   </div>
 
                   <div className="text-xs text-gray-400 flex items-center space-x-3 mt-1 flex-wrap">
                     <span className="flex items-center text-purple-300 font-medium">
                       <Calendar className="w-3 h-3 mr-1 text-purple-400" />
                       Kayıt: {rentInfo.joinDateFormatted}
-                    </span>
-                    <span className="text-emerald-400 font-mono font-bold">
-                      {bike.owner?.phone}
                     </span>
                     <span className="text-gray-400">
                       Toplam Ödenen: <strong className="text-emerald-400 font-mono">{rentInfo.totalRentPaid.toLocaleString('tr-TR')} ₺</strong>

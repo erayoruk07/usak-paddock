@@ -142,7 +142,7 @@ export default function RentPaymentModal({
                 {bike.owner?.fullName}
               </h3>
               <p className="text-xs text-gray-400 truncate">
-                {bike.brand} {bike.model} • Garaj Kayıt: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
+                Garaj Kayıt: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>
@@ -213,16 +213,24 @@ export default function RentPaymentModal({
                   const mIdx = selectedYear * 12 + (m.value - 1);
                   const mCode = `${selectedYear}-${String(m.value).padStart(2, '0')}`;
                   
+                  // Motosikletin kira başlangıç index'i (Bu aydan öncesi asla gecikmede olamaz)
+                  const startPeriodIndex = rentInfo.startPeriod 
+                    ? (rentInfo.startPeriod.year * 12 + (rentInfo.startPeriod.month - 1)) 
+                    : 0;
+
                   // Bu ay ödendi mi? (Dönem bazlı bağımsız kontrol)
                   const isPaid = (rentInfo.paidPeriodCodes || []).includes(mCode);
                   
                   // Seçili mi?
                   const isSelected = selectedMonth === m.value;
                   
+                  // Motosikletin garaj üyelik başlangıcından önceki aylar (Asla gecikmede olamaz!)
+                  const isBeforeStart = mIdx < startPeriodIndex;
+
                   // Ödeme durumu
-                  const isOverdue = !isPaid && mIdx < currentIndex;
-                  const isCurrent = !isPaid && mIdx === currentIndex;
-                  const isUpcoming = !isPaid && mIdx > currentIndex;
+                  const isOverdue = !isPaid && !isBeforeStart && mIdx < currentIndex;
+                  const isCurrent = !isPaid && !isBeforeStart && mIdx === currentIndex;
+                  const isUpcoming = !isPaid && !isBeforeStart && mIdx > currentIndex;
 
                   return (
                     <button
@@ -233,9 +241,13 @@ export default function RentPaymentModal({
                         isSelected
                           ? isPaid
                             ? 'bg-emerald-950/80 border-emerald-400 ring-2 ring-emerald-500/50 scale-[1.02]'
+                            : isBeforeStart
+                            ? 'bg-gray-800 border-purple-500 text-white scale-[1.02]'
                             : 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-600/40 scale-[1.02]'
                           : isPaid
                           ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-400 hover:border-emerald-600'
+                          : isBeforeStart
+                          ? 'bg-black/40 border-gray-900 text-gray-500 hover:border-gray-700 opacity-60'
                           : isOverdue
                           ? 'bg-red-950/30 border-red-800/60 text-red-200 hover:border-red-500'
                           : isCurrent
@@ -257,9 +269,11 @@ export default function RentPaymentModal({
                       {/* Durum Rozeti */}
                       <span className={`text-[9px] font-bold mt-1 block truncate ${
                         isSelected && !isPaid
-                          ? 'text-purple-200'
+                          ? isBeforeStart ? 'text-gray-300' : 'text-purple-200'
                           : isPaid
                           ? 'text-emerald-400'
+                          : isBeforeStart
+                          ? 'text-gray-500'
                           : isOverdue
                           ? 'text-red-400'
                           : isCurrent
@@ -268,6 +282,8 @@ export default function RentPaymentModal({
                       }`}>
                         {isPaid 
                           ? '✓ Ödendi' 
+                          : isBeforeStart
+                          ? 'Kayıt Öncesi'
                           : isOverdue 
                           ? 'Gecikmede' 
                           : isCurrent 
@@ -279,7 +295,7 @@ export default function RentPaymentModal({
                 })}
               </div>
 
-              {/* MÜKERRER ÖDEME UYARISI VEYA SEÇİLEN DÖNEM ÖZETİ */}
+              {/* MÜKERRER ÖDEME UYARISI VEYA SEÇİLEN DÖNEM BİLGİLENDİRMESİ */}
               {isAlreadyPaid ? (
                 <div className="p-3 rounded-xl bg-red-950/80 border-2 border-red-500 text-red-300 text-xs font-bold flex items-center space-x-2 animate-pulse">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
@@ -289,6 +305,13 @@ export default function RentPaymentModal({
                       {selectedPeriodLabel} kirası daha önce tahsil edilmiştir. Mükerrer ödeme alınamaz.
                     </span>
                   </div>
+                </div>
+              ) : selectedIndex < (rentInfo.startPeriod ? (rentInfo.startPeriod.year * 12 + (rentInfo.startPeriod.month - 1)) : 0) ? (
+                <div className="p-3 rounded-xl bg-gray-900/90 border border-purple-500/40 text-purple-300 text-xs font-medium flex items-center space-x-2">
+                  <Clock className="w-4 h-4 text-purple-400 shrink-0" />
+                  <span>
+                    ℹ️ <strong>{selectedPeriodLabel}</strong> dönemi, bu motosikletin garaj başlangıç döneminden ({rentInfo.startPeriodLabel}) öncedir. Gecikme borcu bulunmamaktadır.
+                  </span>
                 </div>
               ) : (
                 <div className="p-2.5 rounded-xl bg-black/60 border border-purple-500/30 flex items-center justify-between text-xs">
