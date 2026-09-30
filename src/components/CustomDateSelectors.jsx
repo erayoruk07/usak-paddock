@@ -303,3 +303,138 @@ export function PeriodSelectPicker({
     </div>
   );
 }
+
+/**
+ * 3. KİRA BAŞLANGIÇ VE YÜRÜRLÜK DÖNEMİ SEÇİCİ (AY & YIL)
+ * Gün bilgisini tamamen kaldırıp yalnızca "Ay" ve "Yıl" formatında dönem seçtirir.
+ */
+export function MonthYearPicker({
+  value,
+  onChange,
+  label = "Kira Başlangıç Dönemi",
+  color = "purple",
+  showPresets = true
+}) {
+  const parsed = useMemo(() => {
+    if (!value) {
+      const now = new Date();
+      return { year: now.getFullYear(), month: now.getMonth() + 1 };
+    }
+    const parts = String(value).split(/[-/.]/);
+    if (parts.length >= 2) {
+      const y = parseInt(parts[0], 10) || 2026;
+      const m = parseInt(parts[1], 10) || 1;
+      return { year: y, month: m };
+    }
+    return { year: 2026, month: 1 };
+  }, [value]);
+
+  const handleUpdate = (newYear, newMonth) => {
+    const formatted = `${newYear}-${String(newMonth).padStart(2, '0')}-01`;
+    onChange(formatted);
+  };
+
+  const handleSetThisMonth = () => {
+    const now = new Date();
+    handleUpdate(now.getFullYear(), now.getMonth() + 1);
+  };
+
+  const handleSetNextMonth = () => {
+    const now = new Date();
+    let m = now.getMonth() + 2;
+    let y = now.getFullYear();
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
+    handleUpdate(y, m);
+  };
+
+  const monthName = TURKISH_MONTHS.find(m => m.value === parsed.month)?.name || '';
+
+  const colorStyles = {
+    purple: {
+      border: 'border-purple-500/60 focus:border-purple-400',
+      badge: 'bg-purple-950/60 text-purple-300 border-purple-800',
+      accent: 'text-purple-400'
+    },
+    amber: {
+      border: 'border-amber-500/60 focus:border-amber-400',
+      badge: 'bg-amber-950/60 text-amber-300 border-amber-800',
+      accent: 'text-amber-400'
+    }
+  }[color] || {
+    border: 'border-purple-500/60 focus:border-purple-400',
+    badge: 'bg-purple-950/60 text-purple-300 border-purple-800',
+    accent: 'text-purple-400'
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-bold text-gray-300 flex items-center">
+          <Calendar className={`w-3.5 h-3.5 mr-1.5 ${colorStyles.accent}`} />
+          {label}
+        </label>
+        <span className={`text-[11px] font-black px-2 py-0.5 rounded-lg border ${colorStyles.badge}`}>
+          {monthName} {parsed.year} Dönemi
+        </span>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        {/* Ay Dropdown */}
+        <div className="relative">
+          <select
+            value={parsed.month}
+            onChange={(e) => handleUpdate(parsed.year, parseInt(e.target.value, 10))}
+            className={`w-full appearance-none bg-black border-2 ${colorStyles.border} rounded-xl px-3 py-2 text-white font-bold text-xs outline-none cursor-pointer pr-7`}
+          >
+            {TURKISH_MONTHS.map(m => (
+              <option key={m.value} value={m.value} className="bg-gray-900 text-white">
+                {m.name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+
+        {/* Yıl Dropdown */}
+        <div className="relative">
+          <select
+            value={parsed.year}
+            onChange={(e) => handleUpdate(parseInt(e.target.value, 10), parsed.month)}
+            className={`w-full appearance-none bg-black border-2 ${colorStyles.border} rounded-xl px-3 py-2 text-white font-bold text-xs outline-none cursor-pointer pr-7`}
+          >
+            {AVAILABLE_YEARS.map(y => (
+              <option key={y} value={y} className="bg-gray-900 text-white">
+                {y}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+      </div>
+
+      {showPresets && (
+        <div className="flex items-center space-x-1.5 pt-0.5">
+          <span className="text-[10px] text-gray-500 font-bold">Hızlı:</span>
+          <button
+            type="button"
+            onClick={handleSetThisMonth}
+            className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-300 font-bold border border-gray-700 transition"
+          >
+            Bu Ay (Cari)
+          </button>
+          <button
+            type="button"
+            onClick={handleSetNextMonth}
+            className="px-2 py-0.5 rounded-lg bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-300 font-bold border border-gray-700 transition"
+          >
+            Gelecek Ay
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+

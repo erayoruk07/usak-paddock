@@ -22,7 +22,7 @@ import {
   formatTitleCaseTurkish
 } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
-import { DateSelectPicker } from './CustomDateSelectors';
+import { MonthYearPicker } from './CustomDateSelectors';
 
 // Hızlı Pist Donanımı Önerileri
 const POPULAR_TRACK_PARTS = [
@@ -161,7 +161,8 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
       id: bikeId,
       garageId: targetGarage ? targetGarage.id : 'box-1',
       garageNo: targetGarage ? targetGarage.name : 'Paddock Box 1',
-      garageJoinDate: formData.garageJoinDate || new Date().toISOString().split('T')[0],
+      garageStartPeriod: formData.garageStartPeriod || (formData.garageJoinDate ? formData.garageJoinDate.substring(0, 7) : '2026-10'),
+      garageJoinDate: formData.garageJoinDate || '2026-10-01',
       raceNumber: formData.raceNumber || '99',
       brand: formData.brand.trim(),
       model: formData.model.trim(),
@@ -309,12 +310,16 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
               </div>
             </div>
 
-            {/* Garaj Kayıt Tarihi (Üyelik & Kira Başlangıcı) */}
+            {/* Kira Başlangıç Dönemi (Ay / Yıl) */}
             <div className="w-full pt-2 border-t border-gray-800">
-              <DateSelectPicker
-                label="Garaj Kayıt Tarihi (Üyelik & Kira Başlangıcı)"
+              <MonthYearPicker
+                label="Kira Başlangıç Dönemi (Ay / Yıl)"
                 value={formData.garageJoinDate}
-                onChange={(val) => setFormData({ ...formData, garageJoinDate: val })}
+                onChange={(val) => setFormData({ 
+                  ...formData, 
+                  garageJoinDate: val,
+                  garageStartPeriod: val.substring(0, 7)
+                })}
                 color="purple"
                 showPresets={true}
               />

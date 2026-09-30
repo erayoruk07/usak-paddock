@@ -17,7 +17,8 @@ import {
   TrendingUp,
   Tag,
   Eye,
-  ChevronRight
+  ChevronRight,
+  Sparkles
 } from 'lucide-react';
 import { getBikeRentInfo, formatDateTR } from '../utils/garageRentHelper';
 import { openWhatsAppMessage, getGarageRentWhatsAppMessage } from '../utils/whatsappHelper';
@@ -55,17 +56,22 @@ export default function GarageRentManagement({
   });
 
   // Metrik Hesaplamaları
-  const overdueItems = bikesWithRent.filter(item => item.rentInfo.status === 'OVERDUE' || item.rentInfo.status === 'PENDING');
+  const overdueItems = bikesWithRent.filter(item => item.rentInfo.status === 'OVERDUE');
+  const pendingItems = bikesWithRent.filter(item => item.rentInfo.status === 'PENDING');
   const paidItems = bikesWithRent.filter(item => item.rentInfo.status === 'PAID');
+  const upcomingItems = bikesWithRent.filter(item => item.rentInfo.status === 'UPCOMING');
 
   const totalOverdueDebt = overdueItems.reduce((acc, item) => acc + item.rentInfo.totalOverdueDebt, 0);
+  const totalPendingDebt = pendingItems.reduce((acc, item) => acc + item.rentInfo.totalOverdueDebt, 0);
   const totalPaidRevenue = bikesWithRent.reduce((acc, item) => acc + item.rentInfo.totalRentPaid, 0);
   const totalExpectedMonthly = bikesWithRent.reduce((acc, item) => acc + item.rentInfo.monthlyRent, 0);
 
   // Filtreleme
   let baseItems = bikesWithRent;
   if (filter === 'OVERDUE') baseItems = overdueItems;
+  else if (filter === 'PENDING') baseItems = pendingItems;
   else if (filter === 'PAID') baseItems = paidItems;
+  else if (filter === 'UPCOMING') baseItems = upcomingItems;
 
   const displayedItems = baseItems.filter(({ bike }) => {
     if (!searchTerm.trim()) return true;
@@ -147,7 +153,7 @@ export default function GarageRentManagement({
             {totalOverdueDebt.toLocaleString('tr-TR')} ₺
           </div>
           <div className="text-[11px] text-red-300/80 font-medium mt-1 truncate">
-            {overdueItems.length} pilot ödeme bekliyor
+            {overdueItems.length > 0 ? `${overdueItems.length} motorun vadesi geçti` : 'Geciken kira borcu yok'}
           </div>
         </div>
 
@@ -199,7 +205,7 @@ export default function GarageRentManagement({
             {totalExpectedMonthly.toLocaleString('tr-TR')} ₺
           </div>
           <div className="text-[11px] text-cyan-300/80 font-medium mt-1 truncate">
-            Aylık beklenen kira geliri
+            {pendingItems.length} cari bekleyen {upcomingItems.length > 0 ? `• ${upcomingItems.length} gelecek` : ''}
           </div>
         </div>
 
@@ -260,11 +266,22 @@ export default function GarageRentManagement({
             )}
           </div>
 
-          {/* 3 Durum Filtre Butonu */}
-          <div className="flex items-center space-x-1.5 w-full sm:w-auto shrink-0">
+          {/* Durum Filtre Butonları */}
+          <div className="flex items-center space-x-1.5 w-full sm:w-auto shrink-0 overflow-x-auto pb-1 sm:pb-0">
+            <button
+              onClick={() => setFilter('ALL')}
+              className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center shrink-0 ${
+                filter === 'ALL'
+                  ? 'bg-purple-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+              }`}
+            >
+              <span>Tümü ({bikesWithRent.length})</span>
+            </button>
+
             <button
               onClick={() => setFilter('OVERDUE')}
-              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
+              className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
                 filter === 'OVERDUE'
                   ? 'bg-red-600 text-white shadow-lg'
                   : 'bg-gray-800 text-red-400 hover:bg-gray-700'
@@ -275,8 +292,20 @@ export default function GarageRentManagement({
             </button>
 
             <button
+              onClick={() => setFilter('PENDING')}
+              className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
+                filter === 'PENDING'
+                  ? 'bg-amber-600 text-white shadow-lg'
+                  : 'bg-gray-800 text-amber-400 hover:bg-gray-700'
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5 mr-1" />
+              <span>Cari Bekleyen ({pendingItems.length})</span>
+            </button>
+
+            <button
               onClick={() => setFilter('PAID')}
-              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
+              className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
                 filter === 'PAID'
                   ? 'bg-emerald-600 text-white shadow-lg'
                   : 'bg-gray-800 text-emerald-400 hover:bg-gray-700'
@@ -286,27 +315,38 @@ export default function GarageRentManagement({
               <span>Ödeyenler ({paidItems.length})</span>
             </button>
 
-            <button
-              onClick={() => setFilter('ALL')}
-              className={`flex-1 sm:flex-none px-3.5 py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 ${
-                filter === 'ALL'
-                  ? 'bg-purple-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
-              }`}
-            >
-              <span>Tümü ({bikesWithRent.length})</span>
-            </button>
+            {upcomingItems.length > 0 && (
+              <button
+                onClick={() => setFilter('UPCOMING')}
+                className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
+                  filter === 'UPCOMING'
+                    ? 'bg-purple-800 text-purple-200 shadow-lg border border-purple-500'
+                    : 'bg-gray-800 text-purple-300 hover:bg-gray-700'
+                }`}
+              >
+                <Sparkles className="w-3.5 h-3.5 mr-1" />
+                <span>Gelecek ({upcomingItems.length})</span>
+              </button>
+            )}
           </div>
 
         </div>
 
         {/* Sonuç Özeti */}
-        <div className="flex items-center justify-between text-xs text-gray-400 px-1 pt-1 border-t border-gray-800/80">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-gray-400 px-1 pt-1 border-t border-gray-800/80">
           <span>
-            {filter === 'OVERDUE' ? '⚠️ Geciken ve ödeme bekleyen garaj kiraları listeleniyor' : filter === 'PAID' ? '✅ Kirası güncel olan araçlar listeleniyor' : '🏢 Tüm kayıtlı garaj motorları listeleniyor'}
+            {filter === 'OVERDUE'
+              ? '⚠️ Geçmiş aylara ait gecikmiş kirası olan araçlar listeleniyor'
+              : filter === 'PENDING'
+              ? '🕒 Yalnızca bu ayın (cari dönem) kira tahsilatı bekleyen araçlar listeleniyor'
+              : filter === 'PAID'
+              ? '✅ Kirası bu aya kadar (veya peşin) ödenmiş güncel araçlar listeleniyor'
+              : filter === 'UPCOMING'
+              ? '✨ Kira başlangıç tarihi henüz gelmemiş ileri tarihli araçlar listeleniyor'
+              : '🏢 Tüm kayıtlı garaj motorları listeleniyor'}
             {searchTerm && ` • "${searchTerm}" için ${displayedItems.length} sonuç bulundu`}
           </span>
-          <span className="font-bold text-gray-300">Toplam: {displayedItems.length} Motor • Detay için karta tıklayın</span>
+          <span className="font-bold text-gray-300 shrink-0">Toplam: {displayedItems.length} Motor • Detay için karta tıklayın</span>
         </div>
       </div>
 
@@ -314,7 +354,9 @@ export default function GarageRentManagement({
       <div className="space-y-3">
         {displayedItems.map(({ bike, rentInfo }) => {
           const isOverdue = rentInfo.status === 'OVERDUE';
+          const isPending = rentInfo.status === 'PENDING';
           const isPaid = rentInfo.status === 'PAID';
+          const isUpcoming = rentInfo.status === 'UPCOMING';
 
           return (
             <div 
@@ -323,6 +365,10 @@ export default function GarageRentManagement({
               className={`cursor-pointer group p-4 sm:p-5 rounded-3xl border-2 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition shadow-lg hover:scale-[1.005] ${
                 isOverdue
                   ? 'bg-red-950/20 border-red-600/70 hover:border-red-500 hover:shadow-red-950/40'
+                  : isPending
+                  ? 'bg-amber-950/20 border-amber-600/70 hover:border-amber-500 hover:shadow-amber-950/40'
+                  : isUpcoming
+                  ? 'bg-[#151922] border-purple-800/60 hover:border-purple-500 hover:shadow-purple-950/40'
                   : isPaid
                   ? 'bg-[#151922] border-emerald-900/50 hover:border-emerald-600/70 hover:shadow-emerald-950/40'
                   : 'bg-[#151922] border-gray-800 hover:border-purple-500/60 hover:shadow-purple-950/40'
@@ -390,14 +436,34 @@ export default function GarageRentManagement({
                         Aylık: {rentInfo.monthlyRent.toLocaleString('tr-TR')} ₺
                       </div>
                     </div>
+                  ) : isUpcoming ? (
+                    <div className="space-y-0.5">
+                      <span className="inline-flex items-center px-3 py-1 rounded-xl bg-purple-950 border border-purple-600 text-purple-300 font-black text-xs">
+                        <Sparkles className="w-3.5 h-3.5 mr-1 text-purple-400" />
+                        {rentInfo.statusLabel}
+                      </span>
+                      <div className="text-[11px] text-purple-300/80 font-medium">
+                        Henüz başlamadı (Aylık: {rentInfo.monthlyRent.toLocaleString('tr-TR')} ₺)
+                      </div>
+                    </div>
+                  ) : isPending ? (
+                    <div className="space-y-0.5">
+                      <span className="inline-flex items-center px-3 py-1 rounded-xl bg-amber-950 border border-amber-600 text-amber-400 font-black text-xs">
+                        <Clock className="w-3.5 h-3.5 mr-1" />
+                        {rentInfo.statusLabel}
+                      </span>
+                      <div className="text-[11px] text-amber-300 font-bold">
+                        Cari Tutar: {rentInfo.totalOverdueDebt.toLocaleString('tr-TR')} ₺
+                      </div>
+                    </div>
                   ) : (
                     <div className="space-y-0.5">
                       <span className="inline-flex items-center px-3 py-1 rounded-xl bg-red-950 border border-red-600 text-red-400 font-black text-xs animate-pulse">
                         <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-                        {rentInfo.overdueDays} Gün Gecikti
+                        {rentInfo.statusLabel}
                       </span>
                       <div className="text-[11px] text-red-300 font-bold">
-                        Vade: {rentInfo.validUntilStr} ({rentInfo.totalOverdueDebt.toLocaleString('tr-TR')} ₺)
+                        Vade: {rentInfo.nextDuePeriod?.label || rentInfo.validUntilStr} ({rentInfo.totalOverdueDebt.toLocaleString('tr-TR')} ₺)
                       </div>
                     </div>
                   )}

@@ -28,7 +28,8 @@ import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
 import { compressImage } from '../utils/imageCompressor';
 import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from '../utils/whatsappHelper';
-import { DateSelectPicker } from './CustomDateSelectors';
+import { MonthYearPicker } from './CustomDateSelectors';
+import { formatPeriod, parsePeriod } from '../utils/garageRentHelper';
 
 export default function BikeDetailModal({ 
   bike, 
@@ -584,10 +585,10 @@ export default function BikeDetailModal({
                       </select>
                     </div>
 
-                    {/* Garaj Kayıt Tarihi */}
+                    {/* Kira Başlangıç Dönemi */}
                     <div className="col-span-full sm:col-span-1">
-                      <DateSelectPicker
-                        label="Garaj Kayıt Tarihi"
+                      <MonthYearPicker
+                        label="Kira Başlangıç Dönemi (Ay / Yıl)"
                         value={vehicleForm.garageJoinDate}
                         onChange={(val) => setVehicleForm({ ...vehicleForm, garageJoinDate: val })}
                         color="purple"
@@ -847,7 +848,7 @@ export default function BikeDetailModal({
                 </div>
               )}
 
-              {/* Garaj Kayıt Tarihi */}
+              {/* Kira Başlangıç Dönemi */}
               <div className="p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div className="p-2.5 rounded-2xl bg-purple-900/40 border border-purple-700/50 text-purple-300">
@@ -855,19 +856,20 @@ export default function BikeDetailModal({
                   </div>
                   <div>
                     <span className="text-xs font-black text-purple-300 uppercase tracking-wider block">
-                      Garaj Kayıt Tarihi
+                      Kira Başlangıç Dönemi
                     </span>
                     <span className="text-[11px] text-gray-400">
-                      Üyelik başlangıcı • Kira hesabı bu tarihten başlar
+                      Üyelik başlangıcı • Kira hesabı bu dönemden saymaya başlar
                     </span>
                   </div>
                 </div>
 
                 <div className="text-right">
                   <span className="px-3.5 py-1.5 rounded-xl bg-purple-900/60 border border-purple-600/50 text-white font-black text-xs sm:text-sm">
-                    {bike.garageJoinDate 
-                      ? new Date(bike.garageJoinDate + 'T00:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
-                      : '15 Ocak 2026'}
+                    {(() => {
+                      const p = parsePeriod(bike.garageStartPeriod || bike.garageJoinDate || '2026-01-15');
+                      return formatPeriod(p.year, p.month);
+                    })()}
                   </span>
                 </div>
               </div>

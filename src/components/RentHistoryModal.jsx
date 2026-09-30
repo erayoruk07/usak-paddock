@@ -12,11 +12,11 @@ export default function RentHistoryModal({
   const payments = rentInfo.rentPayments || [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#141822] border-2 border-purple-500/60 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-[#141822] border-2 border-purple-500/60 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
         {/* Üst Başlık */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-600 text-white font-black text-xl italic flex items-center justify-center shadow-lg shadow-purple-600/30 shrink-0">
               #{bike.raceNumber}
@@ -31,7 +31,7 @@ export default function RentHistoryModal({
                 {bike.owner?.fullName}
               </h3>
               <p className="text-xs text-gray-400 truncate">
-                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.garageJoinDate}
+                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>
@@ -46,26 +46,26 @@ export default function RentHistoryModal({
 
         {/* 3 Özet Kutusu */}
         <div className="grid grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 bg-black/40 border-b border-gray-800 shrink-0 text-center">
-          <div className="p-2.5 rounded-2xl bg-gray-900/90 border border-gray-800">
-            <span className="text-[10px] text-gray-400 font-bold uppercase block">Aylık Kira</span>
-            <span className="text-sm sm:text-lg font-black text-purple-400 font-mono">
+          <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gray-900/90 border border-gray-800">
+            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase block">Aylık Kira</span>
+            <span className="text-xs sm:text-lg font-black text-purple-400 font-mono">
               {rentInfo.monthlyRent.toLocaleString('tr-TR')} ₺
             </span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-gray-900/90 border border-gray-800">
-            <span className="text-[10px] text-gray-400 font-bold uppercase block">Toplam Tahsil Edilen</span>
-            <span className="text-sm sm:text-lg font-black text-emerald-400 font-mono">
+          <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gray-900/90 border border-gray-800">
+            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase block">Toplam Tahsilat</span>
+            <span className="text-xs sm:text-lg font-black text-emerald-400 font-mono">
               {rentInfo.totalRentPaid.toLocaleString('tr-TR')} ₺
             </span>
           </div>
 
-          <div className="p-2.5 rounded-2xl bg-gray-900/90 border border-gray-800">
-            <span className="text-[10px] text-gray-400 font-bold uppercase block">Kira Durumu</span>
-            <span className={`text-xs sm:text-sm font-black block mt-0.5 ${
-              rentInfo.status === 'PAID' ? 'text-emerald-400' : rentInfo.status === 'OVERDUE' ? 'text-red-400' : 'text-amber-400'
+          <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gray-900/90 border border-gray-800">
+            <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase block">Kira Durumu</span>
+            <span className={`text-[11px] sm:text-sm font-black block mt-0.5 truncate ${
+              rentInfo.status === 'PAID' ? 'text-emerald-400' : rentInfo.status === 'OVERDUE' ? 'text-red-400' : rentInfo.status === 'UPCOMING' ? 'text-purple-400' : 'text-amber-400'
             }`}>
-              {rentInfo.status === 'PAID' ? '✅ Bu Ay Ödendi' : rentInfo.status === 'OVERDUE' ? `⚠️ ${rentInfo.overdueDays} Gün Gecikti` : '🕒 Ödeme Bekliyor'}
+              {rentInfo.status === 'PAID' ? '✅ Güncel' : rentInfo.status === 'OVERDUE' ? `⚠️ ${rentInfo.statusLabel}` : rentInfo.status === 'UPCOMING' ? '✨ Başlangıç Bekliyor' : '🕒 Cari Ay Bekliyor'}
             </span>
           </div>
         </div>

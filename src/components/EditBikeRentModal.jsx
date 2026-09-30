@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Calendar, Banknote, CheckCircle2, ShieldCheck, Tag } from 'lucide-react';
-import { DateSelectPicker } from './CustomDateSelectors';
+import { MonthYearPicker } from './CustomDateSelectors';
 
 export default function EditBikeRentModal({ 
   bike, 
@@ -11,14 +11,16 @@ export default function EditBikeRentModal({
 }) {
   if (!bike) return null;
 
-  const defaultFee = settings?.defaultMonthlyRent || 5000;
+  const defaultFee = settings?.defaultMonthlyRent || 8000;
   const [customRent, setCustomRent] = useState(
-    bike.customMonthlyRent !== undefined ? String(bike.customMonthlyRent) : String(defaultFee)
+    bike.customMonthlyRent !== undefined && bike.customMonthlyRent !== null
+      ? String(bike.customMonthlyRent) 
+      : String(defaultFee)
   );
-  const [joinDate, setJoinDate] = useState(
-    bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-15')
+  const [startPeriodStr, setStartPeriodStr] = useState(
+    bike.garageStartPeriod || bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-01')
   );
-  const [useDefault, setUseDefault] = useState(!bike.customMonthlyRent);
+  const [useDefault, setUseDefault] = useState(!bike.customMonthlyRent && bike.customMonthlyRent !== 0);
 
   const handleAmountChange = (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
@@ -30,7 +32,8 @@ export default function EditBikeRentModal({
     const updatedBike = {
       ...bike,
       customMonthlyRent: useDefault ? null : parseInt(customRent, 10),
-      garageJoinDate: joinDate
+      garageStartPeriod: startPeriodStr,
+      garageJoinDate: startPeriodStr.length === 7 ? `${startPeriodStr}-01` : startPeriodStr
     };
 
     onSave(updatedBike);
@@ -38,20 +41,20 @@ export default function EditBikeRentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-md bg-[#141822] border-2 border-purple-500/70 rounded-3xl shadow-2xl overflow-hidden my-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-md bg-[#141822] border-2 border-purple-500/70 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
-        {/* Üst Başlık */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between">
+        {/* Üst Başlık (Sabit) */}
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white font-black text-xl italic flex items-center justify-center shrink-0">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white font-black text-xl italic flex items-center justify-center shrink-0 shadow-lg shadow-purple-600/30">
               #{bike.raceNumber}
             </div>
             <div>
-              <h3 className="text-base font-black text-white truncate">
-                Özel Kira & Üyelik Ayarları
+              <h3 className="text-sm sm:text-base font-black text-white truncate">
+                Özel Kira & Dönem Ayarı
               </h3>
-              <p className="text-xs text-gray-400 truncate">
+              <p className="text-[11px] text-gray-400 truncate">
                 {bike.owner?.fullName} • {bike.garageNo}
               </p>
             </div>
@@ -61,29 +64,29 @@ export default function EditBikeRentModal({
             onClick={onClose}
             className="p-2 rounded-full bg-black/60 text-gray-400 hover:text-white transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4">
+        {/* Form Gövdesi (Mobilde Rahat Kayan Alan) */}
+        <form id="edit-bike-rent-form" onSubmit={handleSubmit} className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0 text-xs">
           
-          {/* Garaj Üyelik / Giriş Tarihi */}
-          <div>
-            <DateSelectPicker
-              label="Garaj Üyelik / Başlangıç Tarihi"
-              value={joinDate}
-              onChange={(val) => setJoinDate(val)}
+          {/* Kira Başlangıç Dönemi (Ay ve Yıl) */}
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/40 space-y-2">
+            <MonthYearPicker
+              label="Kira Başlangıç Dönemi (Ay / Yıl)"
+              value={startPeriodStr}
+              onChange={(val) => setStartPeriodStr(val)}
               color="purple"
               showPresets={true}
             />
-            <p className="text-[11px] text-gray-500 mt-1">
-              Pilotun motosikletini garaja ilk getirdiği üyelik tarihidir (Kira hesabı bu günden başlar).
+            <p className="text-[11px] text-gray-400 leading-snug">
+              Motosikletin kira hesaplaması seçilen aydan itibaren dönemlik olarak sayılmaya başlar.
             </p>
           </div>
 
           {/* Aylık Kira Ücreti */}
-          <div className="space-y-2 pt-2 border-t border-gray-800">
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-black/60 border border-gray-800 space-y-2.5">
             <label className="block text-xs font-bold text-gray-300 uppercase tracking-wider flex items-center justify-between">
               <span className="flex items-center">
                 <Banknote className="w-3.5 h-3.5 mr-1 text-emerald-400" />
@@ -102,7 +105,7 @@ export default function EditBikeRentModal({
                   }}
                   className="rounded border-gray-700 text-purple-600 focus:ring-purple-500"
                 />
-                <span>Genel Varsayılan Ücreti Kullan ({defaultFee.toLocaleString('tr-TR')} ₺)</span>
+                <span>Genel Tarifeyi Kullan ({defaultFee.toLocaleString('tr-TR')} ₺)</span>
               </label>
             </div>
 
@@ -124,25 +127,26 @@ export default function EditBikeRentModal({
             )}
           </div>
 
-          {/* Butonlar */}
-          <div className="pt-2 flex items-center justify-end space-x-2 border-t border-gray-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs"
-            >
-              İptal
-            </button>
-            <button
-              type="submit"
-              className="px-5 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center space-x-1"
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Kaydet</span>
-            </button>
-          </div>
-
         </form>
+
+        {/* Sabit Alt Bar (Mobilde Asla Kaybolmaz) */}
+        <div className="p-3 sm:p-4 bg-gray-950/95 border-t border-gray-800 flex items-center justify-end space-x-2 shrink-0">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-4 py-2 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs"
+          >
+            İptal
+          </button>
+          <button
+            type="submit"
+            form="edit-bike-rent-form"
+            className="px-5 sm:px-6 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs flex items-center space-x-1.5 shadow-lg shadow-purple-600/30 transition transform active:scale-95"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+            <span>Kaydet</span>
+          </button>
+        </div>
 
       </div>
     </div>

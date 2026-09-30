@@ -1,12 +1,12 @@
-// Uşak Yarış Pisti - Garaj Kirası ve Vade Hesaplama Motoru
-// Başlangıç tarihi bazlı kira periyotları, fiyat artışı yürürlük tarihi takibi ve ileri tarihli tahsilat.
+// Uşak Yarış Pisti - Garaj Kirası ve Dönem Hesaplama Motoru
+// Tarih günleri yerine doğrudan DÖNEM (Ay / Yıl) bazlı kira ve aidat yönetimi.
 
 import { saveRentSettingsToDb } from '../services/dbService';
 
 export const STORAGE_KEY_RENT_SETTINGS = "usak_pist_garage_rent_settings_v3";
 
 export const DEFAULT_RENT_SETTINGS = {
-  defaultMonthlyRent: 8000, // Geçerli varsayılan kira (TL)
+  defaultMonthlyRent: 8000, // Geçerli varsayılan aylık kira (TL)
   priceHistory: [
     { effectiveFrom: '2026-01-01', amount: 8000 }
   ],
@@ -15,6 +15,63 @@ export const DEFAULT_RENT_SETTINGS = {
   accountHolder: "Uşak Yarış Pisti Paddock İşletmesi",
   reminderDays: 5
 };
+
+export const TURKISH_MONTHS = [
+  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+];
+
+/**
+ * Ay ve yılı sayısal index'e çevirir (Karşılaştırma ve fark hesabı için)
+ */
+export function periodToIndex(year, month) {
+  return Number(year) * 12 + (Number(month) - 1);
+}
+
+/**
+ * Sayısal index'i { year, month } objesine çevirir
+ */
+export function indexToPeriod(index) {
+  const year = Math.floor(index / 12);
+  const month = (index % 12) + 1;
+  return { year, month };
+}
+
+/**
+ * Dönem ismini Türkçe formatlar (Örn: "Ekim 2026")
+ */
+export function formatPeriod(year, month) {
+  const mIndex = Number(month) - 1;
+  const mName = TURKISH_MONTHS[mIndex] || '';
+  return `${mName} ${year}`;
+}
+
+/**
+ * Herhangi bir string ('2026-10-05', '2026-10') veya Date objesini { year, month } dönemine çevirir
+ */
+export function parsePeriod(val) {
+  if (!val) {
+    const now = new Date();
+    return { year: now.getFullYear(), month: now.getMonth() + 1 };
+  }
+  if (val instanceof Date) {
+    return { year: val.getFullYear(), month: val.getMonth() + 1 };
+  }
+  const str = String(val).trim();
+  const parts = str.split(/[-/.]/);
+  if (parts.length >= 2) {
+    const y = parseInt(parts[0], 10);
+    const m = parseInt(parts[1], 10);
+    if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+      return { year: y, month: m };
+    }
+  }
+  const d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  }
+  return { year: 2026, month: 1 };
+}
 
 export function loadRentSettings() {
   try {
@@ -63,11 +120,6 @@ export function saveRentSettings(settings, performedBy = 'Pist Yöneticisi') {
   }
 }
 
-export const TURKISH_MONTHS = [
-  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
-];
-
 export function formatDateTR(d) {
   if (!d) return '';
   const date = typeof d === 'string' ? new Date(d) : d;
@@ -85,9 +137,6 @@ export function formatMonthYearTR(d) {
   return `${TURKISH_MONTHS[date.getMonth()]} ${date.getFullYear()}`;
 }
 
-/**
- * Belirli bir tarihe X ay ekler (Gün taşmalarını güvenli hesaplar)
- */
 export function addMonthsToDate(date, months) {
   const d = new Date(date);
   const targetMonth = d.getMonth() + months;
@@ -96,46 +145,58 @@ export function addMonthsToDate(date, months) {
 }
 
 /**
- * Belirli bir tarihte geçerli olan aylık kira bedelini hesaplar.
- * Yeni bir fiyat artışı yapıldıysa, sadece yürürlük tarihinden (effectiveFrom) sonraki dönemlere uygulanır.
- * Eski dönemler geçmişteki fiyat üzerinden hesaplanır.
+ * Belirli bir dönemde (Ay ve Yıl) geçerli olan kira bedelini hesaplar.
+ * Yeni bir fiyat artışı olduysa, yalnızca yürürlük tarihinden sonraki dönemlere uygulanır.
  */
-export function getPriceForDate(targetDate, settings, bike = null) {
-  // Eğer motora özel indirimli/özel fiyat tanımlıysa öncelik ondadır
+export function getPriceForPeriod(year, month, settings, bike = null) {
   if (bike && bike.customMonthlyRent !== undefined && bike.customMonthlyRent !== null && bike.customMonthlyRent !== '') {
     return Number(bike.customMonthlyRent);
   }
 
   const history = settings?.priceHistory || DEFAULT_RENT_SETTINGS.priceHistory;
-  const d = typeof targetDate === 'string' ? new Date(targetDate) : targetDate;
-  const targetIso = d.toISOString().split('T')[0];
+  const periodIso = `${year}-${String(month).padStart(2, '0')}-01`;
 
-  // Yürürlük tarihine göre azalan sırada sırala
+  // Yürürlük tarihine göre azalan sırala
   const sorted = [...history].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 
   for (const entry of sorted) {
-    if (entry.effectiveFrom <= targetIso) {
+    if (entry.effectiveFrom <= periodIso) {
       return Number(entry.amount);
     }
   }
 
-  return Number(settings?.defaultMonthlyRent || 5000);
+  return Number(settings?.defaultMonthlyRent || 8000);
+}
+
+// Eski fonksiyon uyumluluğu
+export function getPriceForDate(targetDate, settings, bike = null) {
+  const p = parsePeriod(targetDate);
+  return getPriceForPeriod(p.year, p.month, settings, bike);
 }
 
 /**
- * Motosikletin tüm kira durumunu, başlangıç tarihini, vadesini ve borçlarını hesaplar
+ * Motosikletin DÖNEM BAZLI kira durumunu, vadesini ve ödenmemiş aylarını hesaplar.
+ * Gün farkı aranmaz; her şey Ay ve Yıl dönemleri üzerinden işler.
  */
 export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenceDate = new Date()) {
   if (!bike) return null;
 
-  // Garaja ilk kayıt tarihi (varsayılan: 2026-01-15 veya oluşturulma tarihi)
-  const joinDateStr = bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-15');
-  const joinDate = new Date(joinDateStr);
+  // 1. Cari Dönem (Referans alınan ay ve yıl, örn: Eylül 2026)
+  const currentPeriod = {
+    month: referenceDate.getMonth() + 1,
+    year: referenceDate.getFullYear()
+  };
+  const currentIndex = periodToIndex(currentPeriod.year, currentPeriod.month);
 
-  // Güncel aktif kira bedeli
-  const currentMonthlyRent = getPriceForDate(referenceDate, settings, bike);
+  // 2. Garaj Başlangıç Dönemi (Kira hangi ay/yıldan saymaya başlayacak?)
+  const startPeriod = parsePeriod(bike.garageStartPeriod || bike.garageJoinDate || bike.createdAt || '2026-01-15');
+  const startIndex = periodToIndex(startPeriod.year, startPeriod.month);
+  const startPeriodLabel = formatPeriod(startPeriod.year, startPeriod.month);
 
-  // Yapılan tüm geçmiş kira ödemeleri
+  // 3. Güncel aktif kira bedeli
+  const currentMonthlyRent = getPriceForPeriod(currentPeriod.year, currentPeriod.month, settings, bike);
+
+  // 4. Yapılan tüm geçmiş kira tahsilatları
   const allHistory = Array.isArray(bike.entryHistory) ? bike.entryHistory : [];
   const rentPayments = allHistory.filter(h => 
     h.type === 'RENT_PAYMENT' || 
@@ -143,82 +204,110 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
     (h.note && (h.note.toLowerCase().includes('garaj kirası') || h.note.toLowerCase().includes('kira')))
   );
 
-  // Toplam ödenen kira
   const totalRentPaid = rentPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-
-  // Kaç dönem ödendi?
-  // Her ödeme kaydının 'periodCount' değeri varsa onu alır, yoksa 1 sayar
   const paidPeriodsCount = rentPayments.reduce((acc, p) => acc + (Number(p.periodCount) || 1), 0);
 
-  // Vade bitiş tarihi: Başlangıç tarihinden itibaren ödenen dönem sayısı kadar ay eklenir
-  const validUntilDate = addMonthsToDate(joinDate, paidPeriodsCount);
-  const validUntilStr = formatDateTR(validUntilDate);
+  // 5. Ödenen Son Dönem ve Sıradaki Dönem
+  const lastPaidIndex = startIndex + paidPeriodsCount - 1;
+  const nextDueIndex = paidPeriodsCount > 0 ? (lastPaidIndex + 1) : startIndex;
+  const nextDuePeriod = indexToPeriod(nextDueIndex);
+  nextDuePeriod.label = formatPeriod(nextDuePeriod.year, nextDuePeriod.month);
+  nextDuePeriod.price = getPriceForPeriod(nextDuePeriod.year, nextDuePeriod.month, settings, bike);
 
-  // Durum hesaplaması
-  const now = referenceDate;
-  const isOverdue = validUntilDate < now;
-  const overdueDays = isOverdue 
-    ? Math.max(1, Math.floor((now.getTime() - validUntilDate.getTime()) / (1000 * 60 * 60 * 24)))
-    : 0;
-
-  const daysUntilDue = !isOverdue 
-    ? Math.max(0, Math.floor((validUntilDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)))
-    : 0;
-
-  const status = isOverdue ? 'OVERDUE' : (daysUntilDue <= (settings.reminderDays || 5) ? 'PENDING' : 'PAID');
-
-  // Bir sonraki ödenmesi gereken dönemin fiyatı ve tarih aralığı
-  const nextPeriodStart = validUntilDate;
-  const nextPeriodEnd = addMonthsToDate(nextPeriodStart, 1);
-  const nextPeriodPrice = getPriceForDate(nextPeriodStart, settings, bike);
-  const nextPeriodName = `${formatDateTR(nextPeriodStart)} - ${formatDateTR(nextPeriodEnd)}`;
-
-  // Bekleyen / Gecikmedeki tüm dönemlerin listesi (her biri kendi dönemindeki fiyattan hesaplanır)
-  const unpaidPeriods = [];
-  let tempStart = new Date(validUntilDate);
-  while (tempStart < now) {
-    const tempEnd = addMonthsToDate(tempStart, 1);
-    const periodPrice = getPriceForDate(tempStart, settings, bike);
-    const diffDays = Math.floor((now.getTime() - tempEnd.getTime()) / (1000 * 60 * 60 * 24));
-    
-    unpaidPeriods.push({
-      startDate: new Date(tempStart),
-      endDate: new Date(tempEnd),
-      startStr: formatDateTR(tempStart),
-      endStr: formatDateTR(tempEnd),
-      periodName: `${formatMonthYearTR(tempStart)} Kirası`,
-      label: `${formatDateTR(tempStart)} - ${formatDateTR(tempEnd)}`,
-      amount: periodPrice,
-      isOverdue: true,
-      overdueDays: Math.max(1, diffDays)
-    });
-
-    tempStart = tempEnd;
+  let paidUntilPeriodLabel = "Henüz Ödeme Yok";
+  if (paidPeriodsCount > 0) {
+    const p = indexToPeriod(lastPaidIndex);
+    paidUntilPeriodLabel = formatPeriod(p.year, p.month);
   }
 
-  // Toplam gecikmiş borç tutarı (fiyat artışı eski dönemlere yansıtılmadan hesaplanır)
-  const totalOverdueDebt = unpaidPeriods.reduce((acc, p) => acc + p.amount, 0);
+  // 6. DURUM BELİRLEME (PERIOD LOGIC)
+  let status = 'PAID'; // 'PAID', 'PENDING', 'OVERDUE', 'UPCOMING'
+  let statusLabel = '';
+  let isOverdue = false;
+  let isUpcoming = false;
+  let isPending = false;
+  let isPaid = false;
+  const unpaidPeriods = [];
+
+  // DURUM A: Başlangıç dönemi henüz gelmedi (Gelecek dönem, örn: Bugün Eylül, başlangıç Ekim)
+  if (startIndex > currentIndex) {
+    status = 'UPCOMING';
+    isUpcoming = true;
+    statusLabel = `${startPeriodLabel}'da Başlayacak`;
+  } 
+  // DURUM B: Cari döneme kadar (veya ileriye doğru) ödemesi tamam
+  else if (lastPaidIndex >= currentIndex) {
+    status = 'PAID';
+    isPaid = true;
+    if (lastPaidIndex > currentIndex) {
+      statusLabel = `${paidUntilPeriodLabel}'ya Kadar Peşin Ödendi`;
+    } else {
+      statusLabel = `${paidUntilPeriodLabel} Ödendi (Güncel)`;
+    }
+  } 
+  // DURUM C: Ödenmemiş dönemler var (nextDueIndex <= currentIndex)
+  else {
+    // nextDueIndex'ten cari döneme (currentIndex) kadar olan tüm dönemleri listele
+    for (let idx = nextDueIndex; idx <= currentIndex; idx++) {
+      const p = indexToPeriod(idx);
+      const price = getPriceForPeriod(p.year, p.month, settings, bike);
+      const isPastMonth = idx < currentIndex;
+      
+      unpaidPeriods.push({
+        month: p.month,
+        year: p.year,
+        periodCode: `${p.year}-${String(p.month).padStart(2, '0')}`,
+        label: formatPeriod(p.year, p.month),
+        periodName: `${formatPeriod(p.year, p.month)} Kirası`,
+        amount: price,
+        isOverdue: isPastMonth
+      });
+    }
+
+    // Eğer cari aydan önceki geçmiş aylar ödenmemişse GECİKMEDEDİR
+    if (nextDueIndex < currentIndex) {
+      status = 'OVERDUE';
+      isOverdue = true;
+      const overdueMonths = currentIndex - nextDueIndex;
+      statusLabel = `${overdueMonths} Ay Gecikmede`;
+    } 
+    // Yalnızca cari ayın kirası ödenmemişse BU AY BEKLİYOR
+    else {
+      status = 'PENDING';
+      isPending = true;
+      statusLabel = `${formatPeriod(currentPeriod.year, currentPeriod.month)} Kirası Bekliyor`;
+    }
+  }
+
+  const totalOverdueDebt = (status === 'OVERDUE' || status === 'PENDING')
+    ? unpaidPeriods.reduce((acc, p) => acc + p.amount, 0)
+    : 0;
 
   return {
-    garageJoinDate: joinDateStr,
-    joinDateFormatted: formatDateTR(joinDate),
-    monthlyRent: currentMonthlyRent,
+    startPeriod,
+    startPeriodLabel,
+    currentPeriod,
+    currentPeriodLabel: formatPeriod(currentPeriod.year, currentPeriod.month),
     paidPeriodsCount,
-    validUntilDate,
-    validUntilStr,
-    status, // 'PAID', 'PENDING', 'OVERDUE'
-    isOverdue,
-    overdueDays,
-    daysUntilDue,
-    nextPeriodStart,
-    nextPeriodEnd,
-    nextPeriodPrice,
-    nextPeriodName,
-    currentPeriod: formatMonthYearTR(validUntilDate),
-    unpaidPeriods,
-    totalOverdueDebt: totalOverdueDebt > 0 ? totalOverdueDebt : nextPeriodPrice,
     totalRentPaid,
     rentPayments,
-    isCustomRent: !!(bike.customMonthlyRent !== undefined && bike.customMonthlyRent !== null && bike.customMonthlyRent !== '')
+    monthlyRent: currentMonthlyRent,
+    paidUntilPeriodLabel,
+    nextDuePeriod,
+    nextPeriodPrice: nextDuePeriod.price,
+    status, // 'PAID', 'PENDING', 'OVERDUE', 'UPCOMING'
+    statusLabel,
+    isOverdue,
+    isUpcoming,
+    isPending,
+    isPaid,
+    unpaidPeriods,
+    totalOverdueDebt,
+    isCustomRent: !!(bike.customMonthlyRent !== undefined && bike.customMonthlyRent !== null && bike.customMonthlyRent !== ''),
+    
+    // Geriye dönük string uyumluluğu
+    validUntilStr: paidUntilPeriodLabel,
+    joinDateFormatted: startPeriodLabel,
+    garageJoinDate: `${startPeriod.year}-${String(startPeriod.month).padStart(2, '0')}-01`
   };
 }

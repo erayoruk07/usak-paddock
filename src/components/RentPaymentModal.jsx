@@ -205,11 +205,11 @@ export default function RentPaymentModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg bg-[#141822] border-2 border-purple-500/70 rounded-3xl shadow-2xl overflow-hidden my-6 max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-lg bg-[#141822] border-2 border-purple-500/70 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
         
         {/* Üst Başlık */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
+        <div className="p-3.5 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-purple-600 text-white font-black text-xl italic flex items-center justify-center shadow-lg shadow-purple-600/30 shrink-0">
               #{bike.raceNumber}
@@ -222,7 +222,7 @@ export default function RentPaymentModal({
                 {bike.owner?.fullName}
               </h3>
               <p className="text-xs text-gray-400 truncate">
-                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.joinDateFormatted}
+                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>
@@ -236,7 +236,8 @@ export default function RentPaymentModal({
         </div>
 
         {/* Form İçeriği */}
-        <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           
           {/* 1. SEÇİM MODU GEÇİŞİ: DÖNEM FORMATI vs TARİH FORMATI */}
           <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/40 space-y-3">
@@ -511,19 +512,21 @@ export default function RentPaymentModal({
             </div>
           </div>
 
+          </div>
+
           {/* Alt Butonlar */}
-          <div className="pt-2 flex items-center justify-end space-x-2 border-t border-gray-800 shrink-0">
+          <div className="p-3 sm:p-4 bg-gray-950/95 border-t border-gray-800 flex items-center justify-end space-x-2 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs"
+              className="px-4 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-xs transition"
             >
               İptal
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center space-x-1.5 shadow-lg shadow-purple-600/30 transition transform active:scale-95"
+              className="px-5 sm:px-6 py-2.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-black text-xs flex items-center space-x-1.5 shadow-lg shadow-purple-600/30 transition transform active:scale-95 disabled:opacity-50"
             >
               <CheckCircle2 className="w-4 h-4" />
               <span>Tahsilatı Onayla ({parseInt(customAmountStr, 10).toLocaleString('tr-TR')} ₺)</span>
