@@ -60,6 +60,7 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
   const [formData, setFormData] = useState({
     raceNumber: '',
     garageId: defaultGarageId || 'box-1',
+    garageJoinDate: new Date().toISOString().split('T')[0],
     brand: 'Yamaha',
     model: 'YZF-R6',
     year: 2024,
@@ -159,6 +160,7 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
       id: bikeId,
       garageId: targetGarage ? targetGarage.id : 'box-1',
       garageNo: targetGarage ? targetGarage.name : 'Paddock Box 1',
+      garageJoinDate: formData.garageJoinDate || new Date().toISOString().split('T')[0],
       raceNumber: formData.raceNumber || '99',
       brand: formData.brand.trim(),
       model: formData.model.trim(),
@@ -272,8 +274,8 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
               )}
             </div>
 
-            {/* Yarış Numarası ve Garaj */}
-            <div className="flex-1 w-full grid grid-cols-2 gap-3">
+            {/* Yarış Numarası, Garaj ve Garaj Kayıt Tarihi */}
+            <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-gray-300 font-bold mb-1">
                   Yarış Numarası (#)
@@ -303,6 +305,19 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                     </option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label className="block text-purple-300 font-bold mb-1">
+                  Garaj Kayıt Tarihi
+                </label>
+                <input
+                  type="date"
+                  value={formData.garageJoinDate}
+                  onChange={(e) => setFormData({ ...formData, garageJoinDate: e.target.value })}
+                  className="w-full bg-black border-2 border-purple-500/60 focus:border-purple-400 rounded-xl px-3 py-2 text-white font-bold text-xs outline-none"
+                  required
+                />
               </div>
             </div>
           </div>

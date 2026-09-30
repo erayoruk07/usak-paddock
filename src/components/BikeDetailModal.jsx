@@ -54,6 +54,7 @@ export default function BikeDetailModal({
     model: bike.model || '',
     raceNumber: bike.raceNumber || '',
     garageId: bike.garageId || 'box-1',
+    garageJoinDate: bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-15'),
     chassisNumber: bike.chassisNumber || '',
     engineSize: bike.engineSize || '',
     year: bike.year || 2024,
@@ -177,6 +178,7 @@ export default function BikeDetailModal({
       raceNumber: String(vehicleForm.raceNumber).trim() || bike.raceNumber,
       garageId: targetGarage ? targetGarage.id : bike.garageId,
       garageNo: targetGarage ? targetGarage.name : bike.garageNo,
+      garageJoinDate: vehicleForm.garageJoinDate || bike.garageJoinDate || '2026-01-15',
       chassisNumber: vehicleForm.chassisNumber.trim(),
       engineSize: vehicleForm.engineSize.trim(),
       year: Number(vehicleForm.year) || bike.year,
@@ -209,6 +211,7 @@ export default function BikeDetailModal({
       model: bike.model || '',
       raceNumber: bike.raceNumber || '',
       garageId: bike.garageId || 'box-1',
+      garageJoinDate: bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-15'),
       chassisNumber: bike.chassisNumber || '',
       engineSize: bike.engineSize || '',
       year: bike.year || 2024,
@@ -580,6 +583,18 @@ export default function BikeDetailModal({
                       </select>
                     </div>
 
+                    {/* Garaj Kayıt Tarihi */}
+                    <div>
+                      <label className="text-[10px] font-bold text-purple-400 block mb-1 uppercase">Garaj Kayıt Tarihi</label>
+                      <input
+                        type="date"
+                        value={vehicleForm.garageJoinDate}
+                        onChange={(e) => setVehicleForm({ ...vehicleForm, garageJoinDate: e.target.value })}
+                        className="w-full bg-gray-900 border border-purple-500/70 rounded-xl p-2.5 text-white font-bold focus:border-purple-400 focus:outline-none"
+                        required
+                      />
+                    </div>
+
                     {/* Şasi Numarası (VIN) */}
                     <div className="col-span-full">
                       <label className="text-[10px] font-bold text-gray-400 block mb-1 uppercase">Motor Şasi Numarası (VIN)</label>
@@ -731,6 +746,7 @@ export default function BikeDetailModal({
                             model: bike.model || '',
                             raceNumber: bike.raceNumber || '',
                             garageId: bike.garageId || 'box-1',
+                            garageJoinDate: bike.garageJoinDate || (bike.createdAt ? bike.createdAt.split('T')[0] : '2026-01-15'),
                             chassisNumber: bike.chassisNumber || '',
                             engineSize: bike.engineSize || '',
                             year: bike.year || 2024,
@@ -831,29 +847,28 @@ export default function BikeDetailModal({
                 </div>
               )}
 
-              {/* Garaj Üyelik & Aylık Kira Bilgisi */}
-              <div className="p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-purple-400 font-black uppercase tracking-wider flex items-center">
-                    <Building2 className="w-4 h-4 mr-1.5 text-purple-400" />
-                    Garaj Üyelik & Kira Durumu
+              {/* Garaj Kayıt Tarihi */}
+              <div className="p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 rounded-2xl bg-purple-900/40 border border-purple-700/50 text-purple-300">
+                    <Building2 className="w-5 h-5" />
                   </div>
-                  <span className="text-[11px] font-bold text-purple-300">
-                    {bike.garageNo}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                  <div className="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Garaja Kayıt</span>
-                    <span className="text-white font-bold">{bike.garageJoinDate || '2026-01-15'}</span>
-                  </div>
-                  <div className="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Aylık Kira Bedeli</span>
-                    <span className="text-emerald-400 font-black font-mono">
-                      {(bike.customMonthlyRent || 5000).toLocaleString('tr-TR')} ₺ / Ay
+                  <div>
+                    <span className="text-xs font-black text-purple-300 uppercase tracking-wider block">
+                      Garaj Kayıt Tarihi
+                    </span>
+                    <span className="text-[11px] text-gray-400">
+                      Üyelik başlangıcı • Kira hesabı bu tarihten başlar
                     </span>
                   </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="px-3.5 py-1.5 rounded-xl bg-purple-900/60 border border-purple-600/50 text-white font-black text-xs sm:text-sm">
+                    {bike.garageJoinDate 
+                      ? new Date(bike.garageJoinDate + 'T00:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })
+                      : '15 Ocak 2026'}
+                  </span>
                 </div>
               </div>
             </div>
