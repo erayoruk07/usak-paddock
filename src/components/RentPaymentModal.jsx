@@ -266,30 +266,40 @@ export default function RentPaymentModal({
                         ) : null}
                       </div>
 
-                      {/* Durum Rozeti */}
-                      <span className={`text-[9px] font-bold mt-1 block truncate ${
-                        isSelected && !isPaid
-                          ? isBeforeStart ? 'text-gray-300' : 'text-purple-200'
-                          : isPaid
-                          ? 'text-emerald-400'
-                          : isBeforeStart
-                          ? 'text-gray-500'
-                          : isOverdue
-                          ? 'text-red-400'
-                          : isCurrent
-                          ? 'text-amber-400'
-                          : 'text-gray-500'
-                      }`}>
-                        {isPaid 
-                          ? '✓ Ödendi' 
-                          : isBeforeStart
-                          ? 'Kayıt Öncesi'
-                          : isOverdue 
-                          ? 'Gecikmede' 
-                          : isCurrent 
-                          ? 'Bu Ay' 
-                          : 'Gelecek'}
-                      </span>
+                      {/* Durum Rozeti ve Dönem Fiyatı */}
+                      <div className="flex items-center justify-between text-[9px] mt-1 gap-1">
+                        <span className={`font-bold truncate ${
+                          isSelected && !isPaid
+                            ? isBeforeStart ? 'text-gray-300' : 'text-purple-200'
+                            : isPaid
+                            ? 'text-emerald-400'
+                            : isBeforeStart
+                            ? 'text-gray-500'
+                            : isOverdue
+                            ? 'text-red-400'
+                            : isCurrent
+                            ? 'text-amber-400'
+                            : 'text-gray-500'
+                        }`}>
+                          {isPaid 
+                            ? '✓ Ödendi' 
+                            : isBeforeStart
+                            ? 'Kayıt Öncesi'
+                            : isOverdue 
+                            ? 'Gecikmede' 
+                            : isCurrent 
+                            ? 'Bu Ay' 
+                            : 'Gelecek'}
+                        </span>
+
+                        {!isBeforeStart && (
+                          <span className={`font-mono font-black shrink-0 ${
+                            isSelected && !isPaid ? 'text-white' : isPaid ? 'text-emerald-500/70' : 'text-purple-300'
+                          }`}>
+                            {getPriceForPeriod(selectedYear, m.value, settings, bike).toLocaleString('tr-TR')} ₺
+                          </span>
+                        )}
+                      </div>
                     </button>
                   );
                 })}
@@ -317,7 +327,7 @@ export default function RentPaymentModal({
                 <div className="p-2.5 rounded-xl bg-black/60 border border-purple-500/30 flex items-center justify-between text-xs">
                   <span className="text-gray-400">Tahsil Edilen Dönem:</span>
                   <span className="font-black text-purple-300">
-                    {selectedPeriodLabel} Kirası
+                    {selectedPeriodLabel} Kirası ({periodPrice.toLocaleString('tr-TR')} ₺)
                   </span>
                 </div>
               )}

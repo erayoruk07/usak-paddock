@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { X, Settings, Banknote, Calendar, CreditCard, CheckCircle2, History, AlertCircle } from 'lucide-react';
+import { X, Settings, Banknote, Calendar, CreditCard, CheckCircle2, History, AlertCircle, Trash2 } from 'lucide-react';
 import { MonthYearPicker } from './CustomDateSelectors';
+import { formatPeriod, parsePeriod } from '../utils/garageRentHelper';
 
 export default function RentSettingsModal({ 
   currentSettings, 
@@ -17,30 +18,56 @@ export default function RentSettingsModal({
   const [accountHolder, setAccountHolder] = useState(currentSettings?.accountHolder || 'Uşak Yarış Pisti Paddock İşletmesi');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
-  const priceHistory = currentSettings?.priceHistory || [
-    { effectiveFrom: '2026-01-01', amount: 8000 }
-  ];
+  const [priceHistory, setPriceHistory] = useState(() => {
+    if (Array.isArray(currentSettings?.priceHistory) && currentSettings.priceHistory.length > 0) {
+      return [...currentSettings.priceHistory];
+    }
+    return [
+      { effectiveFrom: '2026-01-01', amount: currentSettings?.defaultMonthlyRent || 8000 }
+    ];
+  });
 
   const handleRentChange = (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
     setDefaultRent(val ? String(parseInt(val, 10)) : '0');
   };
 
+  const handleDeleteHistoryEntry = (indexToDelete) => {
+    if (priceHistory.length <= 1) {
+      alert("En az bir geçerli kira tarifesi bulunmalıdır.");
+      return;
+    }
+    const filtered = priceHistory.filter((_, idx) => idx !== indexToDelete);
+    setPriceHistory(filtered);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const newRent = parseInt(defaultRent, 10) || 8000;
+    const effectiveIso = effectivePeriodStr.length === 7 ? `${effectivePeriodStr}-01` : effectivePeriodStr;
 
-    // Fiyat geçmişine yeni yürürlük dönemi ekle veya güncelle
+    // Önceki geçerli kira bedelini tespit et
+    const previousRent = parseInt(currentSettings?.defaultMonthlyRent, 10) || 8000;
+
     let updatedHistory = [...priceHistory];
-    const existingIndex = updatedHistory.findIndex(p => p.effectiveFrom === effectivePeriodStr);
 
-    if (existingIndex >= 0) {
-      updatedHistory[existingIndex] = { effectiveFrom: effectivePeriodStr, amount: newRent };
-    } else {
-      updatedHistory.push({ effectiveFrom: effectivePeriodStr, amount: newRent });
+    // Eğer yeni yürürlük dönemi 2026-01-01'den sonraysa ve listede daha eski bir baz kayıt yoksa ekle
+    const hasBaseEntry = updatedHistory.some(p => p.effectiveFrom < effectiveIso);
+    if (!hasBaseEntry && effectiveIso > '2026-01-01') {
+      updatedHistory.push({ effectiveFrom: '2026-01-01', amount: previousRent });
     }
 
-    // Tarihe göre azalan sırala
+    // Yeni yürürlük dönemini ekle veya güncelle (YYYY-MM bazında kontrol)
+    const targetPeriodKey = effectiveIso.substring(0, 7);
+    const existingIndex = updatedHistory.findIndex(p => p.effectiveFrom.substring(0, 7) === targetPeriodKey);
+
+    if (existingIndex >= 0) {
+      updatedHistory[existingIndex] = { effectiveFrom: effectiveIso, amount: newRent };
+    } else {
+      updatedHistory.push({ effectiveFrom: effectiveIso, amount: newRent });
+    }
+
+    // Tarihe göre azalan sırala (en güncel en üstte)
     updatedHistory.sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
 
     const updated = {
@@ -143,20 +170,37 @@ export default function RentSettingsModal({
               <History className="w-3.5 h-3.5 mr-1 text-cyan-400" />
               Tarife Geçmişi
             </div>
-            <div className="space-y-1 max-h-24 overflow-y-auto pr-1">
-              {priceHistory.map((item, idx) => (
-                <div 
-                  key={idx}
-                  className="p-2 rounded-xl bg-black/60 border border-gray-800 flex items-center justify-between text-[11px]"
-                >
-                  <span className="text-gray-300 font-medium">
-                    {item.effectiveFrom} Tarihinden İtibaren
-                  </span>
-                  <span className="text-emerald-400 font-black font-mono">
-                    {Number(item.amount).toLocaleString('tr-TR')} ₺ / Ay
-                  </span>
-                </div>
-              ))}
+            <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+              {priceHistory.map((item, idx) => {
+                const p = parsePeriod(item.effectiveFrom);
+                const periodLabel = formatPeriod(p.year, p.month);
+                return (
+                  <div 
+                    key={idx}
+                    className="p-2 rounded-xl bg-black/60 border border-gray-800 flex items-center justify-between text-[11px]"
+                  >
+                    <div className="flex items-center space-x-2">
+                      <span className="text-gray-300 font-bold">
+                        {periodLabel}'dan İtibaren:
+                      </span>
+                      <span className="text-emerald-400 font-black font-mono">
+                        {Number(item.amount).toLocaleString('tr-TR')} ₺ / Ay
+                      </span>
+                    </div>
+
+                    {priceHistory.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteHistoryEntry(idx)}
+                        className="p-1 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-950/40 transition"
+                        title="Bu tarifeyi sil"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

@@ -171,20 +171,33 @@ export function addMonthsToDate(date, months) {
  * Yeni bir fiyat artışı olduysa, yalnızca yürürlük tarihinden sonraki dönemlere uygulanır.
  */
 export function getPriceForPeriod(year, month, settings, bike = null) {
+  // 1. Motosiklete özel tanımlanmış kira varsa her zaman önceliklidir
   if (bike && bike.customMonthlyRent !== undefined && bike.customMonthlyRent !== null && bike.customMonthlyRent !== '') {
     return Number(bike.customMonthlyRent);
   }
 
-  const history = settings?.priceHistory || DEFAULT_RENT_SETTINGS.priceHistory;
   const periodIso = `${year}-${String(month).padStart(2, '0')}-01`;
+  const history = Array.isArray(settings?.priceHistory) && settings.priceHistory.length > 0
+    ? settings.priceHistory
+    : (DEFAULT_RENT_SETTINGS.priceHistory || []);
 
-  // Yürürlük tarihine göre azalan sırala
-  const sorted = [...history].sort((a, b) => b.effectiveFrom.localeCompare(a.effectiveFrom));
+  // Yürürlük tarihine göre azalan sırala (en güncel en üstte)
+  const sorted = [...history].sort((a, b) => {
+    const aIso = a.effectiveFrom?.length === 7 ? `${a.effectiveFrom}-01` : (a.effectiveFrom || '2026-01-01');
+    const bIso = b.effectiveFrom?.length === 7 ? `${b.effectiveFrom}-01` : (b.effectiveFrom || '2026-01-01');
+    return bIso.localeCompare(aIso);
+  });
 
   for (const entry of sorted) {
-    if (entry.effectiveFrom <= periodIso) {
+    const effectiveIso = entry.effectiveFrom?.length === 7 ? `${entry.effectiveFrom}-01` : (entry.effectiveFrom || '2026-01-01');
+    if (effectiveIso <= periodIso) {
       return Number(entry.amount);
     }
+  }
+
+  // Eğer aranan dönem tarihteki tüm yürürlük başlangıçlarından eskiyse, en eski fiyata git
+  if (sorted.length > 0) {
+    return Number(sorted[sorted.length - 1].amount);
   }
 
   return Number(settings?.defaultMonthlyRent || 8000);
