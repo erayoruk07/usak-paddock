@@ -10,6 +10,21 @@ import { INITIAL_GARAGES, INITIAL_BIKES, loadGarages, saveGarages, loadBikes, sa
 // ============================================================
 
 export function bikeToDb(b) {
+  // Kira ve üyelik ayarlarını JSONB entry_history dizisi içinde RENT_CONFIG olarak güvenle saklayalım
+  let entryHistory = Array.isArray(b.entryHistory) ? [...b.entryHistory] : [];
+  // Eski RENT_CONFIG varsa temizleyelim
+  entryHistory = entryHistory.filter(item => item?.type !== 'RENT_CONFIG');
+  
+  if (b.garageJoinDate || b.customMonthlyRent !== undefined) {
+    entryHistory.push({
+      type: 'RENT_CONFIG',
+      garageJoinDate: b.garageJoinDate || null,
+      customMonthlyRent: b.customMonthlyRent !== undefined && b.customMonthlyRent !== null && b.customMonthlyRent !== '' 
+        ? Number(b.customMonthlyRent) 
+        : null
+    });
+  }
+
   return {
     id: b.id,
     garage_id: b.garageId,
@@ -32,12 +47,38 @@ export function bikeToDb(b) {
     remaining_entries: b.remainingEntries ?? 0,
     total_entries_granted: b.totalEntriesGranted ?? 0,
     equipped_parts: b.equippedParts || [],
-    entry_history: b.entryHistory || [],
+    entry_history: entryHistory,
     updated_at: new Date().toISOString()
   };
 }
 
 export function bikeFromDb(row) {
+  const rawHistory = Array.isArray(row.entry_history) ? row.entry_history : [];
+  const rentConfig = rawHistory.find(item => item?.type === 'RENT_CONFIG');
+  // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kaydını filtreleyelim
+  const cleanEntryHistory = rawHistory.filter(item => item?.type !== 'RENT_CONFIG');
+
+  // Mevcut yerel önbellekteki değer varsa yedek olarak kullanalım
+  let fallbackJoinDate = null;
+  let fallbackCustomRent = null;
+  try {
+    const localBikes = loadBikes();
+    const existing = localBikes.find(b => b.id === row.id);
+    if (existing) {
+      if (existing.garageJoinDate) fallbackJoinDate = existing.garageJoinDate;
+      if (existing.customMonthlyRent !== undefined) fallbackCustomRent = existing.customMonthlyRent;
+    }
+  } catch {}
+
+  const garageJoinDate = rentConfig?.garageJoinDate 
+    || row.garage_join_date 
+    || fallbackJoinDate
+    || (row.created_at ? row.created_at.split('T')[0] : '2026-01-15');
+
+  const customMonthlyRent = rentConfig?.customMonthlyRent !== undefined 
+    ? rentConfig.customMonthlyRent 
+    : (row.custom_monthly_rent !== undefined ? row.custom_monthly_rent : fallbackCustomRent);
+
   return {
     id: row.id,
     garageId: row.garage_id,
@@ -50,6 +91,8 @@ export function bikeFromDb(row) {
     chassisNumber: row.chassis_number,
     color: row.color,
     photoUrl: row.photo_url,
+    garageJoinDate,
+    customMonthlyRent,
     owner: {
       fullName: row.owner_name,
       phone: row.owner_phone,
@@ -62,7 +105,7 @@ export function bikeFromDb(row) {
     remainingEntries: row.remaining_entries,
     totalEntriesGranted: row.total_entries_granted,
     equippedParts: Array.isArray(row.equipped_parts) ? row.equipped_parts : [],
-    entryHistory: Array.isArray(row.entry_history) ? row.entry_history : []
+    entryHistory: cleanEntryHistory
   };
 }
 
@@ -463,3 +506,56 @@ export async function fetchRecentLogs(limit = 30) {
     return [];
   }
 }
+
+// ============================================================
+// 6. GARAJ KİRA & FİYAT AYARLARI (RENT SETTINGS) DB İŞLEMLERİ
+// ============================================================
+
+export async function fetchRentSettingsFromDb() {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('entry_logs')
+        .select('*')
+        .eq('action_type', 'RENT_SETTINGS_UPDATE')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data && data.length > 0 && data[0].note) {
+        try {
+          const parsed = JSON.parse(data[0].note);
+          if (parsed && typeof parsed === 'object') {
+            return parsed;
+          }
+        } catch (e) {
+          console.warn('[DB fetchRentSettingsFromDb] JSON parse hatası:', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[DB fetchRentSettingsFromDb] Supabase okuma hatası:', e.message);
+    }
+  }
+  return null;
+}
+
+export async function saveRentSettingsToDb(settings, performedBy = 'Pist Yöneticisi') {
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { error } = await supabase.from('entry_logs').insert([{
+        action_type: 'RENT_SETTINGS_UPDATE',
+        note: JSON.stringify(settings),
+        performed_by: performedBy,
+        created_at: new Date().toISOString()
+      }]);
+
+      if (error) {
+        console.warn('[DB saveRentSettingsToDb] Supabase kayıt uyarısı:', error.message);
+      } else {
+        console.log('[DB saveRentSettingsToDb] Kira ayarları Supabase DB\'ye kaydedildi.');
+      }
+    } catch (e) {
+      console.warn('[DB saveRentSettingsToDb] Bağlantı hatası:', e.message);
+    }
+  }
+}
+

@@ -32,7 +32,8 @@ import {
   insertBike,
   updateBike,
   deleteBike,
-  clearAllTestBikes
+  clearAllTestBikes,
+  fetchRentSettingsFromDb
 } from './services/dbService';
 
 import { isSupabaseConfigured } from './lib/supabaseClient';
@@ -70,7 +71,7 @@ export default function App() {
 
   const handleUpdateRentSettings = (newSettings) => {
     setRentSettings(newSettings);
-    saveRentSettings(newSettings);
+    saveRentSettings(newSettings, currentUser?.name || currentUser?.username || 'Pist Yöneticisi');
   };
   
   // Aktif sekme: 'pitlane' (Garaj), 'garage' (Tüm Motorlar), 'rent' (Giriş Hakları), 'garageRent' (Garaj Kirası), 'print' (Sticker Yazdır)
@@ -101,10 +102,11 @@ export default function App() {
   // Standart ve Kurşun Geçirmez Veritabanı Okuma (SELECT)
   const refreshData = async () => {
     try {
-      const [remoteAdmins, remoteGarages, remoteBikes] = await Promise.all([
+      const [remoteAdmins, remoteGarages, remoteBikes, remoteRentSettings] = await Promise.all([
         fetchAdmins(),
         fetchGarages(),
-        fetchBikes()
+        fetchBikes(),
+        fetchRentSettingsFromDb()
       ]);
 
       setDbStatus(isSupabaseConfigured ? 'connected' : 'offline');
@@ -113,6 +115,10 @@ export default function App() {
       if (Array.isArray(remoteBikes)) {
         setBikes(remoteBikes);
         saveBikes(remoteBikes);
+      }
+      if (remoteRentSettings) {
+        setRentSettings(prev => ({ ...prev, ...remoteRentSettings }));
+        saveRentSettings(remoteRentSettings);
       }
     } catch (err) {
       setDbStatus('offline');

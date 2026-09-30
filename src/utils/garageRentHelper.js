@@ -1,12 +1,14 @@
 // Uşak Yarış Pisti - Garaj Kirası ve Vade Hesaplama Motoru
 // Başlangıç tarihi bazlı kira periyotları, fiyat artışı yürürlük tarihi takibi ve ileri tarihli tahsilat.
 
+import { saveRentSettingsToDb } from '../services/dbService';
+
 export const STORAGE_KEY_RENT_SETTINGS = "usak_pist_garage_rent_settings_v3";
 
 export const DEFAULT_RENT_SETTINGS = {
-  defaultMonthlyRent: 5000, // Geçerli varsayılan kira (TL)
+  defaultMonthlyRent: 8000, // Geçerli varsayılan kira (TL)
   priceHistory: [
-    { effectiveFrom: '2026-01-01', amount: 5000 }
+    { effectiveFrom: '2026-01-01', amount: 8000 }
   ],
   bankName: "Ziraat Bankası",
   iban: "TR12 0001 0000 1234 5678 9001",
@@ -16,16 +18,29 @@ export const DEFAULT_RENT_SETTINGS = {
 
 export function loadRentSettings() {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY_RENT_SETTINGS);
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      return {
-        ...DEFAULT_RENT_SETTINGS,
-        ...parsed,
-        priceHistory: Array.isArray(parsed.priceHistory) && parsed.priceHistory.length > 0
-          ? parsed.priceHistory
-          : [{ effectiveFrom: '2026-01-01', amount: parsed.defaultMonthlyRent || 5000 }]
-      };
+    const keys = [
+      STORAGE_KEY_RENT_SETTINGS,
+      "usak_pist_garage_rent_settings_v2",
+      "usak_pist_garage_rent_settings",
+      "usak_pist_garage_rent_settings_v1"
+    ];
+
+    for (const key of keys) {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && (parsed.defaultMonthlyRent || parsed.priceHistory || parsed.bankName)) {
+            return {
+              ...DEFAULT_RENT_SETTINGS,
+              ...parsed,
+              priceHistory: Array.isArray(parsed.priceHistory) && parsed.priceHistory.length > 0
+                ? parsed.priceHistory
+                : [{ effectiveFrom: '2026-01-01', amount: parsed.defaultMonthlyRent || 8000 }]
+            };
+          }
+        } catch {}
+      }
     }
   } catch (e) {
     console.error("Rent settings load error", e);
@@ -33,11 +48,18 @@ export function loadRentSettings() {
   return DEFAULT_RENT_SETTINGS;
 }
 
-export function saveRentSettings(settings) {
+export function saveRentSettings(settings, performedBy = 'Pist Yöneticisi') {
   try {
     localStorage.setItem(STORAGE_KEY_RENT_SETTINGS, JSON.stringify(settings));
   } catch (e) {
     console.error("Rent settings save error", e);
+  }
+
+  // Canlı Supabase Veritabanına da eş zamanlı kaydet
+  try {
+    saveRentSettingsToDb(settings, performedBy);
+  } catch (err) {
+    console.warn("DB rent settings sync warning", err);
   }
 }
 
