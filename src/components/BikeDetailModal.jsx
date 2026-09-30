@@ -21,7 +21,8 @@ import {
   Eye,
   Edit2,
   Save,
-  RotateCcw
+  RotateCcw,
+  Building2
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { BLOOD_TYPES, RELATIONS, formatPhoneNumber, formatTitleCaseTurkish } from '../data/mockData';
@@ -829,6 +830,32 @@ export default function BikeDetailModal({
                   <div className="text-sm font-mono font-bold text-red-400">{bike.owner?.emergencyPhone}</div>
                 </div>
               )}
+
+              {/* Garaj Üyelik & Aylık Kira Bilgisi */}
+              <div className="p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 space-y-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-purple-400 font-black uppercase tracking-wider flex items-center">
+                    <Building2 className="w-4 h-4 mr-1.5 text-purple-400" />
+                    Garaj Üyelik & Kira Durumu
+                  </div>
+                  <span className="text-[11px] font-bold text-purple-300">
+                    {bike.garageNo}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
+                  <div className="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Garaja Kayıt</span>
+                    <span className="text-white font-bold">{bike.garageJoinDate || '2026-01-15'}</span>
+                  </div>
+                  <div className="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+                    <span className="text-[10px] text-gray-400 uppercase font-bold block">Aylık Kira Bedeli</span>
+                    <span className="text-emerald-400 font-black font-mono">
+                      {(bike.customMonthlyRent || 5000).toLocaleString('tr-TR')} ₺ / Ay
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
           )}
 

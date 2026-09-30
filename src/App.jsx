@@ -3,7 +3,8 @@ import {
   Search, 
   Bike, 
   AlertTriangle,
-  Ticket
+  Ticket,
+  Building2
 } from 'lucide-react';
 
 import { 
@@ -51,7 +52,9 @@ import LoginScreen from './components/LoginScreen';
 import AdminManagementModal from './components/AdminManagementModal';
 import TrackEntryModal from './components/TrackEntryModal';
 import AddEntriesModal from './components/AddEntriesModal';
+import GarageRentManagement from './components/GarageRentManagement';
 import ErrorBoundary from './components/ErrorBoundary';
+import { loadRentSettings, saveRentSettings, getBikeRentInfo } from './utils/garageRentHelper';
 import { openWhatsAppMessage, getZeroEntriesWhatsAppMessage } from './utils/whatsappHelper';
 
 export default function App() {
@@ -62,7 +65,15 @@ export default function App() {
   const [garages, setGarages] = useState(() => loadGarages());
   const [bikes, setBikes] = useState(() => loadBikes());
   
-  // Aktif sekme: 'pitlane' (10 Garaj), 'garage' (Tüm Motorlar), 'rent' (Giriş Hakları), 'print' (Sticker Yazdır)
+  // Garaj Kira ve Aidat Ayarları
+  const [rentSettings, setRentSettings] = useState(() => loadRentSettings());
+
+  const handleUpdateRentSettings = (newSettings) => {
+    setRentSettings(newSettings);
+    saveRentSettings(newSettings);
+  };
+  
+  // Aktif sekme: 'pitlane' (Garaj), 'garage' (Tüm Motorlar), 'rent' (Giriş Hakları), 'garageRent' (Garaj Kirası), 'print' (Sticker Yazdır)
   const [activeTab, setActiveTab] = useState('pitlane'); 
 
   // Seçili açık olan garaj
@@ -421,6 +432,12 @@ export default function App() {
   // Kalan hakkı 0 olan motorlar
   const expiredCount = bikes.filter(b => (b.remainingEntries ?? 0) <= 0).length;
 
+  // Garaj kirası geciken veya ödeme bekleyen motor sayısı
+  const unpaidRentCount = bikes.reduce((acc, bike) => {
+    const info = getBikeRentInfo(bike, rentSettings);
+    return (info && (info.status === 'OVERDUE' || info.status === 'PENDING')) ? acc + 1 : acc;
+  }, 0);
+
   // Filtrelenmiş motorlar
   const filteredBikes = bikes.filter(bike => {
     const searchLower = searchTerm.toLowerCase();
@@ -471,6 +488,7 @@ export default function App() {
             }
           }}
           overdueCount={expiredCount}
+          unpaidRentCount={unpaidRentCount}
           onOpenAddModal={() => {
             if (currentUser?.role === 'VIEWER') return;
             setAddBikeTargetGarageId(currentGarage ? currentGarage.id : 'box-1');
@@ -610,6 +628,39 @@ export default function App() {
                   onSelectBike={(b) => setSelectedBike(b)}
                   onOpenTrackEntry={(b) => setTrackEntryBike(b)}
                   onOpenAddEntries={(b) => setAddEntriesBike(b)}
+                />
+              </ErrorBoundary>
+            </div>
+          )
+        )}
+
+        {/* TAB 5: GARAJ KİRALARI (AYLIK AİDAT & KİRA TAKİBİ) */}
+        {activeTab === 'garageRent' && (
+          currentUser?.role?.toUpperCase() === 'VIEWER' ? (
+            <div className="py-16 text-center rounded-3xl bg-[#141822] border-2 border-gray-700 p-8 space-y-3 max-w-lg mx-auto my-12 animate-fade-in">
+              <div className="w-14 h-14 rounded-2xl bg-purple-500/20 text-purple-400 flex items-center justify-center mx-auto mb-2">
+                <Building2 className="w-7 h-7" />
+              </div>
+              <h3 className="text-lg font-black text-white">Garaj Kira Yönetimi</h3>
+              <p className="text-xs text-gray-400">
+                Gözlemci hesabıyla oturum açtığınız için aylık garaj kira tahsilat ve aidat yönetimini düzenleme yetkiniz kısıtlanmıştır.
+              </p>
+              <button
+                onClick={() => setActiveTab('pitlane')}
+                className="mt-4 px-5 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs"
+              >
+                Garajlara Dön
+              </button>
+            </div>
+          ) : (
+            <div className="animate-fade-in">
+              <ErrorBoundary>
+                <GarageRentManagement
+                  bikes={bikes}
+                  currentUser={currentUser}
+                  rentSettings={rentSettings}
+                  onUpdateSettings={handleUpdateRentSettings}
+                  onUpdateBike={handleUpdateBike}
                 />
               </ErrorBoundary>
             </div>

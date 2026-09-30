@@ -7,13 +7,15 @@ import {
   Bell, 
   PlusCircle, 
   Shield, 
-  LogOut
+  LogOut,
+  Building2
 } from 'lucide-react';
 
 export default function Navbar({ 
   activeTab, 
   setActiveTab, 
   overdueCount, 
+  unpaidRentCount = 0,
   onOpenAddModal, 
   onOpenNotifications,
   currentUser,
@@ -57,7 +59,7 @@ export default function Navbar({
               }`}
             >
               <Warehouse className="w-3.5 h-3.5" />
-              <span>10 Garaj</span>
+              <span>Garaj</span>
             </button>
 
             <button
@@ -86,6 +88,25 @@ export default function Navbar({
                 {overdueCount > 0 && (
                   <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[9px] font-black">
                     {overdueCount}
+                  </span>
+                )}
+              </button>
+            )}
+
+            {!isViewer && (
+              <button
+                onClick={() => setActiveTab('garageRent')}
+                className={`flex items-center space-x-1.5 px-3 py-2 rounded-lg text-xs font-black transition-all ${
+                  activeTab === 'garageRent'
+                    ? 'bg-purple-600 text-white shadow'
+                    : 'text-gray-300 hover:text-white hover:bg-gray-800'
+                }`}
+              >
+                <Building2 className="w-3.5 h-3.5" />
+                <span>Garaj Kirası</span>
+                {unpaidRentCount > 0 && (
+                  <span className="px-1.5 py-0.2 rounded-full bg-red-600 text-white text-[9px] font-black">
+                    {unpaidRentCount}
                   </span>
                 )}
               </button>
@@ -183,7 +204,7 @@ export default function Navbar({
           }`}
         >
           <Warehouse className="w-5 h-5 mb-0.5" />
-          10 Box
+          Garaj
         </button>
         <button
           onClick={() => setActiveTab('scanner')}
@@ -204,6 +225,20 @@ export default function Navbar({
             <Ticket className="w-5 h-5 mb-0.5" />
             Haklar
             {overdueCount > 0 && (
+              <span className="absolute top-0 right-1 w-2 h-2 rounded-full bg-red-500" />
+            )}
+          </button>
+        )}
+        {!isViewer && (
+          <button
+            onClick={() => setActiveTab('garageRent')}
+            className={`flex flex-col items-center p-1 text-[11px] font-bold relative ${
+              activeTab === 'garageRent' ? 'text-purple-400' : 'text-gray-400'
+            }`}
+          >
+            <Building2 className="w-5 h-5 mb-0.5" />
+            Kira
+            {unpaidRentCount > 0 && (
               <span className="absolute top-0 right-1 w-2 h-2 rounded-full bg-red-500" />
             )}
           </button>

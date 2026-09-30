@@ -70,3 +70,52 @@ export function openWhatsAppMessage(rawPhone, text) {
   link.click();
   document.body.removeChild(link);
 }
+
+/**
+ * Garaj Kirası Hatırlatma & Ödeme Bildirimi İçin WhatsApp Şablonu
+ */
+export function getGarageRentWhatsAppMessage(bike, rentInfo, settings = {}) {
+  if (!bike) return '';
+
+  const driverName = bike.owner?.fullName?.trim() || 'Değerli Yarışçımız';
+  const bikeModel = `${bike.brand || ''} ${bike.model || ''}`.trim() || 'Motosiklet';
+  const raceNum = bike.raceNumber ? `#${bike.raceNumber}` : '';
+  const garageNo = bike.garageNo || 'Paddock Box';
+  const amount = (rentInfo?.monthlyRent || 5000).toLocaleString('tr-TR');
+  const period = rentInfo?.currentPeriod || 'Aylık Garaj Kirası';
+  
+  const statusNote = rentInfo?.isOverdue 
+    ? `⚠️ *Ödeme Durumu:* *${rentInfo.overdueDays} Gün Gecikmede*`
+    : `📅 *Ödeme Durumu:* *Vadesi Geldi / Beklemede*`;
+
+  const iban = settings?.iban || 'TR12 0001 0000 1234 5678 9001';
+  const bankName = settings?.bankName || 'Ziraat Bankası';
+  const accountHolder = settings?.accountHolder || 'Uşak Yarış Pisti İşletmesi';
+
+  return `🏁 *UŞAK YARIŞ PİSTİ* • *PADDOCK BOX*
+🏢 *AYLIK GARAJ KİRASI BİLGİLENDİRMESİ*
+━━━━━━━━━━━━━━━━━━━━
+
+Sayın *${driverName}*,
+
+Paddock garajımızda barınan yarış aracınızın aylık garaj kullanım kira ödemesi vadesi gelmiştir:
+
+🏍️ *Motosiklet:* ${bikeModel} ${raceNum ? `(${raceNum})` : ''}
+📍 *Bulunduğu Alan:* ${garageNo}
+📅 *Dönem:* ${period}
+💰 *Aylık Kira Bedeli:* *${amount} ₺*
+${statusNote}
+
+────────────────────
+🏦 *Banka Hesap Bilgilerimiz:*
+• *Banka:* ${bankName}
+• *IBAN:* \`${iban}\`
+• *Alıcı:* ${accountHolder}
+• *Açıklama:* ${raceNum} ${driverName} Garaj Kirası
+
+Ödemenizi gerçekleştirdikten sonra dekontunuzu bu hat üzerinden iletmenizi rica ederiz.
+
+Keyifli ve güvenli sürüşler dileriz! 🏎️💨
+
+*Uşak Yarış Pisti & Paddock Yönetimi*`;
+}
