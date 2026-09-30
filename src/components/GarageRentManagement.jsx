@@ -111,6 +111,8 @@ export default function GarageRentManagement({
     });
 
     setSelectedBikeForPayment(null);
+    setSelectedBikeForSummary(prev => prev && prev.id === updatedBike.id ? updatedBike : prev);
+    setSelectedBikeForHistory(prev => prev && prev.id === updatedBike.id ? updatedBike : prev);
   };
 
   // Özel Kira / Üyelik Tarihi Güncelleme
@@ -120,6 +122,7 @@ export default function GarageRentManagement({
       note: `Garaj üyelik ve özel kira ayarları güncellendi (#${updatedBike.raceNumber} ${updatedBike.owner?.fullName})`
     });
     setSelectedBikeForEdit(null);
+    setSelectedBikeForSummary(prev => prev && prev.id === updatedBike.id ? updatedBike : prev);
   };
 
   return (
@@ -543,28 +546,34 @@ export default function GarageRentManagement({
       {/* 4. MODALLAR */}
       
       {/* Kişi Kartına Tıklayınca Açılan Kira Özeti & Vade Modalı */}
-      {selectedBikeForSummary && (
-        <RentSummaryModal
-          bike={selectedBikeForSummary}
-          rentInfo={getBikeRentInfo(selectedBikeForSummary, rentSettings)}
-          settings={rentSettings}
-          onClose={() => setSelectedBikeForSummary(null)}
-          onOpenPayment={(b) => setSelectedBikeForPayment(b)}
-          onOpenEdit={(b) => setSelectedBikeForEdit(b)}
-          onSendWhatsApp={(b, info) => handleSendWhatsAppReminder(b, info)}
-        />
-      )}
+      {selectedBikeForSummary && (() => {
+        const liveBike = safeBikes.find(b => b.id === selectedBikeForSummary.id) || selectedBikeForSummary;
+        return (
+          <RentSummaryModal
+            bike={liveBike}
+            rentInfo={getBikeRentInfo(liveBike, rentSettings)}
+            settings={rentSettings}
+            onClose={() => setSelectedBikeForSummary(null)}
+            onOpenPayment={(b) => setSelectedBikeForPayment(b)}
+            onOpenEdit={(b) => setSelectedBikeForEdit(b)}
+            onSendWhatsApp={(b, info) => handleSendWhatsAppReminder(b, info)}
+          />
+        );
+      })()}
 
       {/* Kira Tahsilat Modalı */}
-      {selectedBikeForPayment && (
-        <RentPaymentModal
-          bike={selectedBikeForPayment}
-          rentInfo={getBikeRentInfo(selectedBikeForPayment, rentSettings)}
-          settings={rentSettings}
-          onClose={() => setSelectedBikeForPayment(null)}
-          onSavePayment={handleSavePayment}
-        />
-      )}
+      {selectedBikeForPayment && (() => {
+        const liveBike = safeBikes.find(b => b.id === selectedBikeForPayment.id) || selectedBikeForPayment;
+        return (
+          <RentPaymentModal
+            bike={liveBike}
+            rentInfo={getBikeRentInfo(liveBike, rentSettings)}
+            settings={rentSettings}
+            onClose={() => setSelectedBikeForPayment(null)}
+            onSavePayment={handleSavePayment}
+          />
+        );
+      })()}
 
       {/* Kira Ayarları Modalı */}
       {isSettingsOpen && (
@@ -578,25 +587,31 @@ export default function GarageRentManagement({
       )}
 
       {/* Geçmiş Kira Tahsilatları Modalı */}
-      {selectedBikeForHistory && (
-        <RentHistoryModal
-          bike={selectedBikeForHistory}
-          rentInfo={getBikeRentInfo(selectedBikeForHistory, rentSettings)}
-          onClose={() => setSelectedBikeForHistory(null)}
-          onOpenPaymentModal={(b) => setSelectedBikeForPayment(b)}
-        />
-      )}
+      {selectedBikeForHistory && (() => {
+        const liveBike = safeBikes.find(b => b.id === selectedBikeForHistory.id) || selectedBikeForHistory;
+        return (
+          <RentHistoryModal
+            bike={liveBike}
+            rentInfo={getBikeRentInfo(liveBike, rentSettings)}
+            onClose={() => setSelectedBikeForHistory(null)}
+            onOpenPaymentModal={(b) => setSelectedBikeForPayment(b)}
+          />
+        );
+      })()}
 
       {/* Özel Kira & Üyelik Düzenleme Modalı */}
-      {selectedBikeForEdit && (
-        <EditBikeRentModal
-          bike={selectedBikeForEdit}
-          rentInfo={getBikeRentInfo(selectedBikeForEdit, rentSettings)}
-          settings={rentSettings}
-          onClose={() => setSelectedBikeForEdit(null)}
-          onSave={handleSaveBikeEdit}
-        />
-      )}
+      {selectedBikeForEdit && (() => {
+        const liveBike = safeBikes.find(b => b.id === selectedBikeForEdit.id) || selectedBikeForEdit;
+        return (
+          <EditBikeRentModal
+            bike={liveBike}
+            rentInfo={getBikeRentInfo(liveBike, rentSettings)}
+            settings={rentSettings}
+            onClose={() => setSelectedBikeForEdit(null)}
+            onSave={handleSaveBikeEdit}
+          />
+        );
+      })()}
 
     </div>
   );

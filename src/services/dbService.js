@@ -15,15 +15,18 @@ export function bikeToDb(b) {
   // Eski RENT_CONFIG varsa temizleyelim
   entryHistory = entryHistory.filter(item => item?.type !== 'RENT_CONFIG');
   
-  if (b.garageJoinDate || b.customMonthlyRent !== undefined) {
-    entryHistory.push({
-      type: 'RENT_CONFIG',
-      garageJoinDate: b.garageJoinDate || null,
-      customMonthlyRent: b.customMonthlyRent !== undefined && b.customMonthlyRent !== null && b.customMonthlyRent !== '' 
-        ? Number(b.customMonthlyRent) 
-        : null
-    });
-  }
+  const startPeriod = b.garageStartPeriod || (b.garageJoinDate ? b.garageJoinDate.substring(0, 7) : null);
+  const joinDate = b.garageJoinDate || (startPeriod ? `${startPeriod}-01` : null);
+  const customRent = (b.customMonthlyRent !== undefined && b.customMonthlyRent !== null && b.customMonthlyRent !== '') 
+    ? Number(b.customMonthlyRent) 
+    : null;
+
+  entryHistory.push({
+    type: 'RENT_CONFIG',
+    garageStartPeriod: startPeriod,
+    garageJoinDate: joinDate,
+    customMonthlyRent: customRent
+  });
 
   return {
     id: b.id,
@@ -58,26 +61,20 @@ export function bikeFromDb(row) {
   // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kaydını filtreleyelim
   const cleanEntryHistory = rawHistory.filter(item => item?.type !== 'RENT_CONFIG');
 
-  // Mevcut yerel önbellekteki değer varsa yedek olarak kullanalım
-  let fallbackJoinDate = null;
-  let fallbackCustomRent = null;
-  try {
-    const localBikes = loadBikes();
-    const existing = localBikes.find(b => b.id === row.id);
-    if (existing) {
-      if (existing.garageJoinDate) fallbackJoinDate = existing.garageJoinDate;
-      if (existing.customMonthlyRent !== undefined) fallbackCustomRent = existing.customMonthlyRent;
-    }
-  } catch {}
-
   const garageJoinDate = rentConfig?.garageJoinDate 
     || row.garage_join_date 
-    || fallbackJoinDate
     || (row.created_at ? row.created_at.split('T')[0] : '2026-01-15');
 
-  const customMonthlyRent = rentConfig?.customMonthlyRent !== undefined 
-    ? rentConfig.customMonthlyRent 
-    : (row.custom_monthly_rent !== undefined ? row.custom_monthly_rent : fallbackCustomRent);
+  const garageStartPeriod = rentConfig?.garageStartPeriod 
+    || (garageJoinDate ? garageJoinDate.substring(0, 7) : '2026-01');
+
+  // Eğer rentConfig varsa customMonthlyRent'i doğrudan al (null ise null kalmalı, yani Genel Tarifeyi Kullan)
+  let customMonthlyRent = null;
+  if (rentConfig) {
+    customMonthlyRent = rentConfig.customMonthlyRent !== undefined ? rentConfig.customMonthlyRent : null;
+  } else if (row.custom_monthly_rent !== undefined) {
+    customMonthlyRent = row.custom_monthly_rent;
+  }
 
   return {
     id: row.id,
@@ -92,6 +89,7 @@ export function bikeFromDb(row) {
     color: row.color,
     photoUrl: row.photo_url,
     garageJoinDate,
+    garageStartPeriod,
     customMonthlyRent,
     owner: {
       fullName: row.owner_name,
@@ -342,6 +340,12 @@ export async function insertBike(bike, currentUsername = 'Admin') {
     throw e;
   }
 
+  // Yerel önbelleğe de anında yaz
+  try {
+    const currentBikes = loadBikes();
+    saveBikes([bike, ...currentBikes.filter(b => b.id !== bike.id)]);
+  } catch (err) {}
+
   await logAction({
     bikeId: bike.id,
     raceNumber: bike.raceNumber,
@@ -356,6 +360,15 @@ export async function insertBike(bike, currentUsername = 'Admin') {
 
 export async function updateBike(bike, currentUsername = 'Admin', logInfo = null) {
   const row = bikeToDb(bike);
+
+  // Yerel önbelleği hemen anlık güncelle ki ekran anında güncellensin
+  try {
+    const currentBikes = loadBikes();
+    const nextBikes = currentBikes.map(b => b.id === bike.id ? bike : b);
+    saveBikes(nextBikes);
+  } catch (err) {
+    console.warn('[DB updateBike] Yerel kayıt uyarısı:', err);
+  }
 
   if (isSupabaseConfigured && supabase) {
     try {

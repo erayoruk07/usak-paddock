@@ -5,6 +5,8 @@ import {
   Banknote, 
   Calendar, 
   CheckCircle2, 
+  ChevronLeft,
+  ChevronRight,
   Clock, 
   AlertTriangle,
   Check
@@ -46,12 +48,16 @@ export default function RentPaymentModal({
     };
   }, [rentInfo]);
 
-  const [selectedMonth, setSelectedMonth] = useState(defaultPeriod.month);
   const [selectedYear, setSelectedYear] = useState(defaultPeriod.year);
+  const [selectedMonth, setSelectedMonth] = useState(defaultPeriod.month);
   const [paymentMethod, setPaymentMethod] = useState('Nakit'); // 'Nakit', 'Havale / EFT', 'Kredi Kartı'
   const [customAmountStr, setCustomAmountStr] = useState('');
   const [note, setNote] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Güncel cari dönem endeksi
+  const now = new Date();
+  const currentIndex = now.getFullYear() * 12 + now.getMonth();
 
   // Seçilen dönem bilgileri
   const selectedPeriodCode = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}`;
@@ -61,79 +67,26 @@ export default function RentPaymentModal({
   // MÜKERRER ÖDEME KONTROLÜ
   // Eğer bu dönem daha önce ödendiyse kesinlikle tekrar ödeme alınamaz
   const isAlreadyPaid = useMemo(() => {
-    // 1. Ödenen son dönem endeksi kontrolü
     if (rentInfo.paidPeriodsCount > 0 && selectedIndex <= rentInfo.lastPaidIndex) {
       return true;
     }
-    // 2. Geçmiş tahsilat kayıtlarındaki dönem kodları kontrolü
     if (Array.isArray(rentInfo.paidPeriodCodes) && rentInfo.paidPeriodCodes.includes(selectedPeriodCode)) {
       return true;
     }
     return false;
   }, [selectedIndex, selectedPeriodCode, rentInfo]);
 
-  // Hızlı Seçim Dönemleri: YALNIZCA ÖDENMEMİŞ VE GELECEK DÖNEMLER
-  // Zaten ödenmiş dönemler burada asla gösterilmez (mükerrer ödeme engeli)
-  const quickPeriods = useMemo(() => {
-    const list = [];
-    const seen = new Set();
-
-    // 1. Önce varsa ödenmemiş borçlu dönemler
-    if (rentInfo.unpaidPeriods && rentInfo.unpaidPeriods.length > 0) {
-      rentInfo.unpaidPeriods.forEach(p => {
-        const key = `${p.year}-${p.month}`;
-        if (!seen.has(key)) {
-          seen.add(key);
-          list.push({
-            month: p.month,
-            year: p.year,
-            label: p.label || formatPeriod(p.year, p.month),
-            badge: p.isOverdue ? 'Gecikmede' : 'Ödeme Bekliyor',
-            isOverdue: p.isOverdue
-          });
-        }
-      });
-    }
-
-    // 2. Sıradaki henüz ödenmemiş gelecek dönemler
-    const startIdx = rentInfo.nextDuePeriod 
-      ? (rentInfo.nextDuePeriod.year * 12 + rentInfo.nextDuePeriod.month - 1)
-      : (defaultPeriod.year * 12 + defaultPeriod.month - 1);
-
-    for (let i = 0; i < 6; i++) {
-      const idx = startIdx + i;
-      const y = Math.floor(idx / 12);
-      const m = (idx % 12) + 1;
-      const key = `${y}-${m}`;
-      
-      // Daha önce ödenmişse listeye ekleme
-      const isPaid = (rentInfo.paidPeriodsCount > 0 && idx <= rentInfo.lastPaidIndex) ||
-                     (rentInfo.paidPeriodCodes || []).includes(`${y}-${String(m).padStart(2, '0')}`);
-      
-      if (!isPaid && !seen.has(key)) {
-        seen.add(key);
-        list.push({
-          month: m,
-          year: y,
-          label: formatPeriod(y, m),
-          badge: i === 0 && list.length === 0 ? 'Sıradaki Dönem' : 'Gelecek Dönem',
-          isOverdue: false
-        });
-      }
-    }
-
-    return list.slice(0, 6);
-  }, [rentInfo, defaultPeriod]);
-
-  // Seçilen tek dönemin fiyatı
+  // Seçilen dönemin fiyatı
   const periodPrice = useMemo(() => {
     return getPriceForPeriod(selectedYear, selectedMonth, settings, bike);
   }, [selectedYear, selectedMonth, settings, bike]);
 
-  // Dönem değiştiğinde tutarı otomatik güncelle
+  // Dönem veya yıl değiştiğinde tutarı otomatik güncelle
   useEffect(() => {
-    setCustomAmountStr(String(periodPrice));
-  }, [periodPrice]);
+    if (!isAlreadyPaid) {
+      setCustomAmountStr(String(periodPrice));
+    }
+  }, [periodPrice, isAlreadyPaid]);
 
   const handleAmountChange = (e) => {
     const val = e.target.value.replace(/[^0-9]/g, '');
@@ -145,11 +98,6 @@ export default function RentPaymentModal({
     setCustomAmountStr(String(num));
   };
 
-  const handleSelectQuickPeriod = (m, y) => {
-    setSelectedMonth(m);
-    setSelectedYear(y);
-  };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (isSubmitting || isAlreadyPaid) return;
@@ -159,8 +107,8 @@ export default function RentPaymentModal({
 
     confetti({ particleCount: 90, spread: 70, origin: { y: 0.6 } });
 
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('tr-TR') + ' ' + now.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
+    const nowDate = new Date();
+    const dateStr = nowDate.toLocaleDateString('tr-TR') + ' ' + nowDate.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' });
 
     const newPaymentRecord = {
       id: 'rent_' + Date.now(),
@@ -197,7 +145,7 @@ export default function RentPaymentModal({
                 {bike.owner?.fullName}
               </h3>
               <p className="text-xs text-gray-400 truncate">
-                {bike.brand} {bike.model} • Garaj Üyesi: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
+                {bike.brand} {bike.model} • Garaj Kayıt: {rentInfo.joinDateFormatted || rentInfo.garageJoinDate}
               </p>
             </div>
           </div>
@@ -214,107 +162,135 @@ export default function RentPaymentModal({
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
           
-            {/* 1. ÖDENECEK KİRA DÖNEMİ */}
+            {/* 1. ÖDENECEK KİRA DÖNEMİ: YIL SEÇİCİ & 12 AY TAKVİMİ */}
             <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/40 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center">
+              
+              {/* Yıl Seçim Çubuğu */}
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center shrink-0">
                   <Calendar className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
-                  Hangi Dönem Ödeniyor?
+                  Ödenen Dönem
                 </span>
-                <span className="text-[10px] text-purple-400 font-bold bg-purple-950/80 px-2 py-0.5 rounded-md border border-purple-800">
-                  Tek Dönem Tahsilatı
-                </span>
-              </div>
 
-              {/* Hızlı Dönem Butonları (Yalnızca ödenmemiş dönemler listelenir) */}
-              {quickPeriods.length > 0 && (
-                <div>
-                  <span className="text-[11px] text-gray-400 font-bold block mb-1.5">
-                    Ödenecek Dönemi Seçin:
-                  </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
-                    {quickPeriods.map((p, idx) => {
-                      const isSelected = p.month === selectedMonth && p.year === selectedYear;
-                      return (
-                        <button
-                          type="button"
-                          key={idx}
-                          onClick={() => handleSelectQuickPeriod(p.month, p.year)}
-                          className={`p-2 rounded-xl text-left border transition flex flex-col justify-between ${
-                            isSelected
-                              ? 'bg-purple-600 border-purple-400 text-white shadow-md scale-[1.01]'
-                              : p.isOverdue
-                              ? 'bg-red-950/40 border-red-800/60 text-red-200 hover:border-red-500'
-                              : 'bg-black/60 border-gray-800 text-gray-300 hover:border-gray-600'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-black text-xs">{p.label}</span>
-                            {isSelected && <Check className="w-3.5 h-3.5 text-white" />}
-                          </div>
-                          <span className={`text-[10px] font-bold mt-0.5 ${
-                            isSelected 
-                              ? 'text-purple-200' 
-                              : p.isOverdue 
-                              ? 'text-red-400' 
-                              : 'text-gray-500'
-                          }`}>
-                            {p.badge}
-                          </span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Ay ve Yıl Açılır Listeleri (Dropdown) */}
-              <div className="grid grid-cols-2 gap-2 pt-1 border-t border-purple-500/20">
-                <div>
-                  <label className="text-[10px] text-gray-400 font-bold block mb-1">Dönem Ayı</label>
-                  <select
-                    value={selectedMonth}
-                    onChange={(e) => setSelectedMonth(parseInt(e.target.value, 10))}
-                    className="w-full bg-black border-2 border-purple-500/60 rounded-xl px-3 py-2 text-white font-bold text-xs outline-none cursor-pointer focus:border-purple-400"
+                {/* Yıl Değiştirme Butonları (Hızlı Yıl Seçimi) */}
+                <div className="flex items-center space-x-1 bg-black/80 p-1 rounded-xl border border-purple-500/30">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYear(prev => prev - 1)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                    title="Önceki Yıl"
                   >
-                    {TURKISH_MONTHS.map(m => {
-                      const mIdx = selectedYear * 12 + (m.value - 1);
-                      const mCode = `${selectedYear}-${String(m.value).padStart(2, '0')}`;
-                      const isPaid = (rentInfo.paidPeriodsCount > 0 && mIdx <= rentInfo.lastPaidIndex) || 
-                                     (rentInfo.paidPeriodCodes || []).includes(mCode);
-                      return (
-                        <option key={m.value} value={m.value}>
-                          {m.name} {isPaid ? '✓ (Ödendi)' : ''}
-                        </option>
-                      );
-                    })}
-                  </select>
-                </div>
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
 
-                <div>
-                  <label className="text-[10px] text-gray-400 font-bold block mb-1">Dönem Yılı</label>
-                  <select
-                    value={selectedYear}
-                    onChange={(e) => setSelectedYear(parseInt(e.target.value, 10))}
-                    className="w-full bg-black border-2 border-purple-500/60 rounded-xl px-3 py-2 text-white font-bold text-xs outline-none cursor-pointer focus:border-purple-400"
+                  {/* Son 3-4 Yıl Hızlı Butonları */}
+                  {[2025, 2026, 2027, 2028].map(y => (
+                    <button
+                      type="button"
+                      key={y}
+                      onClick={() => setSelectedYear(y)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
+                        selectedYear === y
+                          ? 'bg-purple-600 text-white shadow-md'
+                          : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                      }`}
+                    >
+                      {y}
+                    </button>
+                  ))}
+
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYear(prev => prev + 1)}
+                    className="p-1 rounded-lg text-gray-400 hover:text-white hover:bg-gray-800 transition"
+                    title="Sonraki Yıl"
                   >
-                    {AVAILABLE_YEARS.map(y => (
-                      <option key={y} value={y}>
-                        {y}
-                      </option>
-                    ))}
-                  </select>
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
                 </div>
               </div>
 
-              {/* MÜKERRER ÖDEME UYARI KUTUSU */}
+              {/* 12 AY KARTLARI (3x4 Grid - İlgili Sene İçin Tüm Aylar) */}
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-1.5">
+                {TURKISH_MONTHS.map(m => {
+                  const mIdx = selectedYear * 12 + (m.value - 1);
+                  const mCode = `${selectedYear}-${String(m.value).padStart(2, '0')}`;
+                  
+                  // Bu ay ödendi mi?
+                  const isPaid = (rentInfo.paidPeriodsCount > 0 && mIdx <= rentInfo.lastPaidIndex) || 
+                                 (rentInfo.paidPeriodCodes || []).includes(mCode);
+                  
+                  // Seçili mi?
+                  const isSelected = selectedMonth === m.value;
+                  
+                  // Ödeme durumu
+                  const isOverdue = !isPaid && mIdx < currentIndex;
+                  const isCurrent = !isPaid && mIdx === currentIndex;
+                  const isUpcoming = !isPaid && mIdx > currentIndex;
+
+                  return (
+                    <button
+                      type="button"
+                      key={m.value}
+                      onClick={() => setSelectedMonth(m.value)}
+                      className={`p-2 rounded-xl text-left border transition flex flex-col justify-between min-h-[58px] ${
+                        isSelected
+                          ? isPaid
+                            ? 'bg-emerald-950/80 border-emerald-400 ring-2 ring-emerald-500/50 scale-[1.02]'
+                            : 'bg-purple-600 border-purple-400 text-white shadow-lg shadow-purple-600/40 scale-[1.02]'
+                          : isPaid
+                          ? 'bg-emerald-950/30 border-emerald-800/50 text-emerald-400 hover:border-emerald-600'
+                          : isOverdue
+                          ? 'bg-red-950/30 border-red-800/60 text-red-200 hover:border-red-500'
+                          : isCurrent
+                          ? 'bg-amber-950/30 border-amber-600/60 text-amber-200 hover:border-amber-500'
+                          : 'bg-black/60 border-gray-800 text-gray-300 hover:border-gray-600'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <span className={`font-black text-xs ${isSelected && !isPaid ? 'text-white' : ''}`}>
+                          {m.name}
+                        </span>
+                        {isPaid ? (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                        ) : isSelected ? (
+                          <Check className="w-3.5 h-3.5 text-white shrink-0" />
+                        ) : null}
+                      </div>
+
+                      {/* Durum Rozeti */}
+                      <span className={`text-[9px] font-bold mt-1 block truncate ${
+                        isSelected && !isPaid
+                          ? 'text-purple-200'
+                          : isPaid
+                          ? 'text-emerald-400'
+                          : isOverdue
+                          ? 'text-red-400'
+                          : isCurrent
+                          ? 'text-amber-400'
+                          : 'text-gray-500'
+                      }`}>
+                        {isPaid 
+                          ? '✓ Ödendi' 
+                          : isOverdue 
+                          ? 'Gecikmede' 
+                          : isCurrent 
+                          ? 'Bu Ay' 
+                          : 'Gelecek'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* MÜKERRER ÖDEME UYARISI VEYA SEÇİLEN DÖNEM ÖZETİ */}
               {isAlreadyPaid ? (
                 <div className="p-3 rounded-xl bg-red-950/80 border-2 border-red-500 text-red-300 text-xs font-bold flex items-center space-x-2 animate-pulse">
                   <AlertTriangle className="w-5 h-5 text-red-400 shrink-0" />
                   <div>
-                    <span className="font-black text-red-200 block">Bu Dönem Daha Önce Ödenmiştir!</span>
+                    <span className="font-black text-red-200 block">Bu Dönem Zaten Ödendi!</span>
                     <span className="text-[11px] text-red-300">
-                      {selectedPeriodLabel} kirası bu motor için tahsil edilmiştir. Mükerrer ödeme alınamaz.
+                      {selectedPeriodLabel} kirası daha önce tahsil edilmiştir. Mükerrer ödeme alınamaz.
                     </span>
                   </div>
                 </div>
