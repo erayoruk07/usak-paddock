@@ -81,29 +81,73 @@ export function getGarageRentWhatsAppMessage(bike, rentInfo, settings = {}) {
   const bikeModel = `${bike.brand || ''} ${bike.model || ''}`.trim() || 'Motosiklet';
   const raceNum = bike.raceNumber ? `#${bike.raceNumber}` : '';
   const garageNo = bike.garageNo || 'Paddock Box';
-  const amount = (rentInfo?.monthlyRent || 5000).toLocaleString('tr-TR');
-  const period = rentInfo?.currentPeriod || 'Aylık Garaj Kirası';
-  
-  const statusNote = rentInfo?.isOverdue 
-    ? `⚠️ *Ödeme Durumu:* *${rentInfo.overdueDays} Gün Gecikmede*`
-    : `📅 *Ödeme Durumu:* *Vadesi Geldi / Beklemede*`;
+
+  // 1. Ödenecek Dönem Tespiti (Asla [object Object] olamaz)
+  let periodLabel = '';
+  let totalAmount = 0;
+
+  if (rentInfo?.unpaidPeriods && rentInfo.unpaidPeriods.length > 0) {
+    if (rentInfo.unpaidPeriods.length === 1) {
+      periodLabel = rentInfo.unpaidPeriods[0].label || rentInfo.unpaidPeriods[0].periodName || 'Cari Dönem';
+    } else {
+      const firstLabel = rentInfo.unpaidPeriods[0].label;
+      const lastLabel = rentInfo.unpaidPeriods[rentInfo.unpaidPeriods.length - 1].label;
+      periodLabel = `${firstLabel} - ${lastLabel} (${rentInfo.unpaidPeriods.length} Dönem)`;
+    }
+    totalAmount = rentInfo.unpaidPeriods.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
+  } else if (rentInfo?.nextDuePeriod?.label) {
+    periodLabel = rentInfo.nextDuePeriod.label;
+    totalAmount = Number(rentInfo.nextDuePeriod.price || rentInfo.monthlyRent || 5000);
+  } else if (typeof rentInfo?.currentPeriodLabel === 'string') {
+    periodLabel = rentInfo.currentPeriodLabel;
+    totalAmount = Number(rentInfo.monthlyRent || 5000);
+  } else if (typeof rentInfo?.currentPeriod === 'string') {
+    periodLabel = rentInfo.currentPeriod;
+    totalAmount = Number(rentInfo.monthlyRent || 5000);
+  } else if (rentInfo?.currentPeriod && typeof rentInfo.currentPeriod === 'object') {
+    const m = rentInfo.currentPeriod.month;
+    const y = rentInfo.currentPeriod.year;
+    periodLabel = `${m}/${y}`;
+    totalAmount = Number(rentInfo.monthlyRent || 5000);
+  } else {
+    periodLabel = 'Cari Kira Dönemi';
+    totalAmount = Number(rentInfo?.monthlyRent || 5000);
+  }
+
+  // 2. Tutar Hesaplaması
+  const finalAmount = totalAmount > 0 ? totalAmount : (rentInfo?.totalOverdueDebt || rentInfo?.monthlyRent || 5000);
+  const formattedAmount = Number(finalAmount).toLocaleString('tr-TR');
+
+  // 3. Durum Notu (Dönem bazlı durum etiketleri)
+  let statusNote = '';
+  if (rentInfo?.status === 'OVERDUE') {
+    statusNote = `⚠️ *Ödeme Durumu:* *Gecikmede (${rentInfo.statusLabel || 'Geçmiş Borç'})*`;
+  } else if (rentInfo?.status === 'PENDING') {
+    statusNote = `📅 *Ödeme Durumu:* *Cari Dönem Vadesi Geldi*`;
+  } else if (rentInfo?.status === 'UPCOMING') {
+    statusNote = `✨ *Ödeme Durumu:* *${rentInfo.statusLabel || 'Gelecek Dönem Başlayacak'}*`;
+  } else if (rentInfo?.status === 'PAID') {
+    statusNote = `✅ *Ödeme Durumu:* *Güncel (${rentInfo.paidUntilPeriodLabel || 'Ödendi'})*`;
+  } else {
+    statusNote = `📅 *Ödeme Durumu:* *Vadesi Geldi / Beklemede*`;
+  }
 
   const iban = settings?.iban || 'TR12 0001 0000 1234 5678 9001';
   const bankName = settings?.bankName || 'Ziraat Bankası';
   const accountHolder = settings?.accountHolder || 'Uşak Yarış Pisti İşletmesi';
 
   return `🏁 *UŞAK YARIŞ PİSTİ* • *PADDOCK BOX*
-🏢 *AYLIK GARAJ KİRASI BİLGİLENDİRMESİ*
+🏢 *GARAJ KİRASI ÖDEME BİLGİLENDİRMESİ*
 ━━━━━━━━━━━━━━━━━━━━
 
 Sayın *${driverName}*,
 
-Paddock garajımızda barınan yarış aracınızın aylık garaj kullanım kira ödemesi vadesi gelmiştir:
+Paddock garajımızda barınan yarış aracınızın garaj kullanım kira ödemesi vadesi gelmiştir:
 
 🏍️ *Motosiklet:* ${bikeModel} ${raceNum ? `(${raceNum})` : ''}
 📍 *Bulunduğu Alan:* ${garageNo}
-📅 *Dönem:* ${period}
-💰 *Aylık Kira Bedeli:* *${amount} ₺*
+📅 *Ödenecek Dönem:* *${periodLabel}*
+💰 *Ödenecek Tutar:* *${formattedAmount} ₺*
 ${statusNote}
 
 ────────────────────
