@@ -58,14 +58,36 @@ export function parsePeriod(val) {
     return { year: val.getFullYear(), month: val.getMonth() + 1 };
   }
   const str = String(val).trim();
-  const parts = str.split(/[-/.]/);
-  if (parts.length >= 2) {
-    const y = parseInt(parts[0], 10);
-    const m = parseInt(parts[1], 10);
-    if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
-      return { year: y, month: m };
+
+  // 1. Türkçe ay ismi kontrolü (örn: "Kasım 2026", "Ekim 2026 Kirası")
+  for (let i = 0; i < TURKISH_MONTHS.length; i++) {
+    const monthName = TURKISH_MONTHS[i];
+    if (new RegExp(monthName, 'i').test(str)) {
+      const yearMatch = str.match(/\b(20\d\d)\b/);
+      if (yearMatch) {
+        return { year: parseInt(yearMatch[1], 10), month: i + 1 };
+      }
     }
   }
+
+  // 2. YYYY-MM veya YYYY-MM-DD / DD.MM.YYYY formatı
+  const parts = str.split(/[-/.]/);
+  if (parts.length >= 2) {
+    if (parts[0].length === 4) {
+      const y = parseInt(parts[0], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+        return { year: y, month: m };
+      }
+    } else if (parts[2] && parts[2].length === 4) {
+      const y = parseInt(parts[2], 10);
+      const m = parseInt(parts[1], 10);
+      if (!isNaN(y) && !isNaN(m) && m >= 1 && m <= 12) {
+        return { year: y, month: m };
+      }
+    }
+  }
+
   const d = new Date(str);
   if (!isNaN(d.getTime())) {
     return { year: d.getFullYear(), month: d.getMonth() + 1 };
@@ -205,96 +227,161 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
   );
 
   const totalRentPaid = rentPayments.reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
-  const paidPeriodsCount = rentPayments.reduce((acc, p) => acc + (Number(p.periodCount) || 1), 0);
 
-  // 5. Ödenen Son Dönem ve Sıradaki Dönem
-  const lastPaidIndex = startIndex + paidPeriodsCount - 1;
-  const nextDueIndex = paidPeriodsCount > 0 ? (lastPaidIndex + 1) : startIndex;
-  const nextDuePeriod = indexToPeriod(nextDueIndex);
-  nextDuePeriod.label = formatPeriod(nextDuePeriod.year, nextDuePeriod.month);
-  nextDuePeriod.price = getPriceForPeriod(nextDuePeriod.year, nextDuePeriod.month, settings, bike);
+  // 5. ÖDENMİŞ DÖNEMLERİN KODLARINI SET OLARAK TOPLA
+  // Her ödeme kaydı bağımsız bir dönemi temsil eder (Örn: Kasım 2026 ödendiyse yalnızca '2026-11' ödenir)
+  const paidPeriodCodesSet = new Set();
 
-  let paidUntilPeriodLabel = "Henüz Ödeme Yok";
-  if (paidPeriodsCount > 0) {
-    const p = indexToPeriod(lastPaidIndex);
-    paidUntilPeriodLabel = formatPeriod(p.year, p.month);
+  rentPayments.forEach(p => {
+    // A) Doğrudan periodCode (örn: '2026-11')
+    if (p.periodCode && /^\d{4}-\d{2}$/.test(p.periodCode)) {
+      paidPeriodCodesSet.add(p.periodCode);
+      return;
+    }
+    // B) startPeriod (örn: '2026-11')
+    if (p.startPeriod && /^\d{4}-\d{2}$/.test(p.startPeriod)) {
+      paidPeriodCodesSet.add(p.startPeriod);
+      return;
+    }
+    // C) Metin formatı (örn: 'Kasım 2026', 'Kasım 2026 Kirası', '2026-11-01')
+    const candidateStr = p.period || p.coverageStart || p.coverageEnd || p.startPeriod;
+    if (candidateStr) {
+      const parsed = parsePeriod(candidateStr);
+      if (parsed && parsed.year && parsed.month) {
+        paidPeriodCodesSet.add(`${parsed.year}-${String(parsed.month).padStart(2, '0')}`);
+        return;
+      }
+    }
+  });
+
+  // Eski dönem kaydı olmayan loglar için geri dönük uyumluluk
+  let unmappedCount = rentPayments.filter(p => !p.periodCode && !p.period && !p.coverageStart && !p.startPeriod)
+    .reduce((acc, p) => acc + (Number(p.periodCount) || 1), 0);
+  if (unmappedCount > 0) {
+    let curr = startIndex;
+    while (unmappedCount > 0) {
+      const p = indexToPeriod(curr);
+      const code = `${p.year}-${String(p.month).padStart(2, '0')}`;
+      if (!paidPeriodCodesSet.has(code)) {
+        paidPeriodCodesSet.add(code);
+        unmappedCount--;
+      }
+      curr++;
+    }
   }
 
-  // 6. DURUM BELİRLEME (PERIOD LOGIC)
+  const paidPeriodCodes = Array.from(paidPeriodCodesSet).sort();
+  const paidPeriodsCount = paidPeriodCodes.length;
+
+  // En son ödenen dönemi bul
+  let latestPaidIndex = -1;
+  paidPeriodCodesSet.forEach(code => {
+    const p = parsePeriod(code);
+    const idx = periodToIndex(p.year, p.month);
+    if (idx > latestPaidIndex) {
+      latestPaidIndex = idx;
+    }
+  });
+
+  let paidUntilPeriodLabel = "Henüz Ödeme Yok";
+  if (latestPaidIndex !== -1) {
+    const lp = indexToPeriod(latestPaidIndex);
+    paidUntilPeriodLabel = formatPeriod(lp.year, lp.month);
+  }
+
+  // 6. ÖDENMEMİŞ DÖNEMLERİ LİSTELE (startIndex'ten currentIndex'e kadar)
+  const unpaidPeriods = [];
+  if (startIndex <= currentIndex) {
+    for (let idx = startIndex; idx <= currentIndex; idx++) {
+      const p = indexToPeriod(idx);
+      const code = `${p.year}-${String(p.month).padStart(2, '0')}`;
+      
+      if (!paidPeriodCodesSet.has(code)) {
+        const price = getPriceForPeriod(p.year, p.month, settings, bike);
+        const isPastMonth = idx < currentIndex;
+        
+        unpaidPeriods.push({
+          month: p.month,
+          year: p.year,
+          periodCode: code,
+          label: formatPeriod(p.year, p.month),
+          periodName: `${formatPeriod(p.year, p.month)} Kirası`,
+          amount: price,
+          isOverdue: isPastMonth
+        });
+      }
+    }
+  }
+
+  // 7. SIRADAKİ ÖDENECEK DÖNEM
+  let nextDuePeriod = null;
+  if (unpaidPeriods.length > 0) {
+    // Vadesi gelmiş/gecikmiş en eski ödenmemiş dönem
+    nextDuePeriod = {
+      month: unpaidPeriods[0].month,
+      year: unpaidPeriods[0].year,
+      label: unpaidPeriods[0].label,
+      price: unpaidPeriods[0].amount
+    };
+  } else if (startIndex > currentIndex) {
+    // Başlangıç tarihi henüz gelmemiş
+    nextDuePeriod = {
+      month: startPeriod.month,
+      year: startPeriod.year,
+      label: startPeriodLabel,
+      price: getPriceForPeriod(startPeriod.year, startPeriod.month, settings, bike)
+    };
+  } else {
+    // Tüm dönemler ödenmiş, sıradaki dönem
+    const nextIdx = Math.max(latestPaidIndex + 1, currentIndex + 1);
+    const np = indexToPeriod(nextIdx);
+    nextDuePeriod = {
+      month: np.month,
+      year: np.year,
+      label: formatPeriod(np.year, np.month),
+      price: getPriceForPeriod(np.year, np.month, settings, bike)
+    };
+  }
+
+  // 8. DURUM BELİRLEME
   let status = 'PAID'; // 'PAID', 'PENDING', 'OVERDUE', 'UPCOMING'
   let statusLabel = '';
   let isOverdue = false;
   let isUpcoming = false;
   let isPending = false;
   let isPaid = false;
-  const unpaidPeriods = [];
 
-  // DURUM A: Başlangıç dönemi henüz gelmedi (Gelecek dönem, örn: Bugün Eylül, başlangıç Ekim)
-  if (startIndex > currentIndex) {
+  // DURUM A: Başlangıç dönemi henüz gelmedi ve geçmişe dönük ödenmemiş ay yok
+  if (startIndex > currentIndex && unpaidPeriods.length === 0) {
     status = 'UPCOMING';
     isUpcoming = true;
     statusLabel = `${startPeriodLabel}'da Başlayacak`;
-  } 
-  // DURUM B: Cari döneme kadar (veya ileriye doğru) ödemesi tamam
-  else if (lastPaidIndex >= currentIndex) {
-    status = 'PAID';
-    isPaid = true;
-    if (lastPaidIndex > currentIndex) {
-      statusLabel = `${paidUntilPeriodLabel}'ya Kadar Peşin Ödendi`;
-    } else {
-      statusLabel = `${paidUntilPeriodLabel} Ödendi (Güncel)`;
-    }
-  } 
-  // DURUM C: Ödenmemiş dönemler var (nextDueIndex <= currentIndex)
-  else {
-    // nextDueIndex'ten cari döneme (currentIndex) kadar olan tüm dönemleri listele
-    for (let idx = nextDueIndex; idx <= currentIndex; idx++) {
-      const p = indexToPeriod(idx);
-      const price = getPriceForPeriod(p.year, p.month, settings, bike);
-      const isPastMonth = idx < currentIndex;
-      
-      unpaidPeriods.push({
-        month: p.month,
-        year: p.year,
-        periodCode: `${p.year}-${String(p.month).padStart(2, '0')}`,
-        label: formatPeriod(p.year, p.month),
-        periodName: `${formatPeriod(p.year, p.month)} Kirası`,
-        amount: price,
-        isOverdue: isPastMonth
-      });
-    }
-
-    // Eğer cari aydan önceki geçmiş aylar ödenmemişse GECİKMEDEDİR
-    if (nextDueIndex < currentIndex) {
+  }
+  // DURUM B: Ödenmemiş aylar var
+  else if (unpaidPeriods.length > 0) {
+    const overdueCount = unpaidPeriods.filter(u => u.isOverdue).length;
+    if (overdueCount > 0) {
       status = 'OVERDUE';
       isOverdue = true;
-      const overdueMonths = currentIndex - nextDueIndex;
-      statusLabel = `${overdueMonths} Ay Gecikmede`;
-    } 
-    // Yalnızca bu ayın kirası ödenmemişse
-    else {
+      statusLabel = `${overdueCount} Ay Gecikmede`;
+    } else {
       status = 'PENDING';
       isPending = true;
       statusLabel = `Bu Ay Ödenmedi (${formatPeriod(currentPeriod.year, currentPeriod.month)})`;
     }
   }
-
-  // Ödenmiş dönemlerin listesi (Mükerrer tahsilatı engellemek için)
-  const paidPeriodCodes = [];
-  if (paidPeriodsCount > 0) {
-    for (let idx = startIndex; idx <= lastPaidIndex; idx++) {
-      const p = indexToPeriod(idx);
-      paidPeriodCodes.push(`${p.year}-${String(p.month).padStart(2, '0')}`);
+  // DURUM C: Cari aya kadar tüm ödemeler tamam
+  else {
+    status = 'PAID';
+    isPaid = true;
+    if (latestPaidIndex > currentIndex) {
+      statusLabel = `${paidUntilPeriodLabel}'ya Kadar Peşin Ödendi`;
+    } else {
+      statusLabel = `${formatPeriod(currentPeriod.year, currentPeriod.month)} Ödendi (Güncel)`;
     }
   }
-  rentPayments.forEach(p => {
-    if (p.startPeriod && !paidPeriodCodes.includes(p.startPeriod)) paidPeriodCodes.push(p.startPeriod);
-    if (p.periodCode && !paidPeriodCodes.includes(p.periodCode)) paidPeriodCodes.push(p.periodCode);
-  });
 
-  const totalOverdueDebt = (status === 'OVERDUE' || status === 'PENDING')
-    ? unpaidPeriods.reduce((acc, p) => acc + p.amount, 0)
-    : 0;
+  const totalOverdueDebt = unpaidPeriods.reduce((acc, p) => acc + p.amount, 0);
 
   return {
     startPeriod,
@@ -302,7 +389,7 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
     currentPeriod,
     currentPeriodLabel: formatPeriod(currentPeriod.year, currentPeriod.month),
     paidPeriodsCount,
-    lastPaidIndex,
+    lastPaidIndex: latestPaidIndex,
     paidPeriodCodes,
     totalRentPaid,
     rentPayments,

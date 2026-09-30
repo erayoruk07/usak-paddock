@@ -67,14 +67,11 @@ export default function RentPaymentModal({
   // MÜKERRER ÖDEME KONTROLÜ
   // Eğer bu dönem daha önce ödendiyse kesinlikle tekrar ödeme alınamaz
   const isAlreadyPaid = useMemo(() => {
-    if (rentInfo.paidPeriodsCount > 0 && selectedIndex <= rentInfo.lastPaidIndex) {
-      return true;
-    }
     if (Array.isArray(rentInfo.paidPeriodCodes) && rentInfo.paidPeriodCodes.includes(selectedPeriodCode)) {
       return true;
     }
     return false;
-  }, [selectedIndex, selectedPeriodCode, rentInfo]);
+  }, [selectedPeriodCode, rentInfo]);
 
   // Seçilen dönemin fiyatı
   const periodPrice = useMemo(() => {
@@ -216,9 +213,8 @@ export default function RentPaymentModal({
                   const mIdx = selectedYear * 12 + (m.value - 1);
                   const mCode = `${selectedYear}-${String(m.value).padStart(2, '0')}`;
                   
-                  // Bu ay ödendi mi?
-                  const isPaid = (rentInfo.paidPeriodsCount > 0 && mIdx <= rentInfo.lastPaidIndex) || 
-                                 (rentInfo.paidPeriodCodes || []).includes(mCode);
+                  // Bu ay ödendi mi? (Dönem bazlı bağımsız kontrol)
+                  const isPaid = (rentInfo.paidPeriodCodes || []).includes(mCode);
                   
                   // Seçili mi?
                   const isSelected = selectedMonth === m.value;

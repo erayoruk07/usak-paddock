@@ -219,101 +219,104 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 max-h-[78vh] overflow-y-auto text-xs">
           
-          {/* 1. Fotoğraf, Yarış Numarası ve Garaj Seçimi */}
-          <div className="p-3.5 rounded-2xl bg-gray-900/90 border border-gray-800 flex flex-col sm:flex-row gap-4 items-center">
-            
-            {/* Fotoğraf Alanı & Kontrolleri */}
-            <div className="flex flex-col items-center space-y-2 shrink-0">
-              <div className="relative w-36 h-28 rounded-2xl overflow-hidden bg-black border-2 border-gray-700 shadow-md group">
-                <img 
-                  src={formData.photoUrl} 
-                  alt="Motor Önizleme" 
-                  className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
-                />
-                
-                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition text-white">
-                  <Camera className="w-5 h-5 mb-1 text-cyan-400" />
-                  <span className="text-[10px] font-bold">Fotoğraf Değiştir</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                </label>
-              </div>
-
-              {/* Fotoğraf Butonları: Galeri, Kamera, URL */}
-              <div className="flex items-center space-x-1">
-                <label className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold cursor-pointer flex items-center space-x-1 border border-gray-700">
-                  <Upload className="w-3 h-3 text-cyan-400" />
-                  <span>Yükle</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
-                </label>
-
-                <button
-                  type="button"
-                  onClick={() => setShowUrlInput(!showUrlInput)}
-                  className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold flex items-center space-x-1 border border-gray-700"
-                >
-                  <LinkIcon className="w-3 h-3 text-amber-400" />
-                  <span>Link Gir</span>
-                </button>
-              </div>
-
-              {showUrlInput && (
-                <div className="w-full flex items-center space-x-1 mt-1">
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={customPhotoUrl}
-                    onChange={(e) => setCustomPhotoUrl(e.target.value)}
-                    className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-[10px] text-white"
+          {/* 1. Fotoğraf, Yarış Numarası, Garaj ve Kira Başlangıç Dönemi */}
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-gray-900/90 border border-gray-800 space-y-3.5">
+            {/* Üst Kısım: Fotoğraf ve Yarış Numarası & Garaj Seçimi */}
+            <div className="flex flex-col sm:flex-row gap-4 items-center">
+              
+              {/* Fotoğraf Alanı & Kontrolleri */}
+              <div className="flex flex-col items-center space-y-2 shrink-0">
+                <div className="relative w-36 h-28 rounded-2xl overflow-hidden bg-black border-2 border-gray-700 shadow-md group">
+                  <img 
+                    src={formData.photoUrl} 
+                    alt="Motor Önizleme" 
+                    className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                   />
+                  
+                  <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition text-white">
+                    <Camera className="w-5 h-5 mb-1 text-cyan-400" />
+                    <span className="text-[10px] font-bold">Fotoğraf Değiştir</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+                </div>
+
+                {/* Fotoğraf Butonları: Galeri, Kamera, URL */}
+                <div className="flex items-center space-x-1">
+                  <label className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold cursor-pointer flex items-center space-x-1 border border-gray-700">
+                    <Upload className="w-3 h-3 text-cyan-400" />
+                    <span>Yükle</span>
+                    <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} />
+                  </label>
+
                   <button
                     type="button"
-                    onClick={handleApplyPhotoUrl}
-                    className="px-2 py-1 rounded-lg bg-cyan-600 text-white font-bold text-[10px]"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className="px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 text-[10px] font-bold flex items-center space-x-1 border border-gray-700"
                   >
-                    Uygula
+                    <LinkIcon className="w-3 h-3 text-amber-400" />
+                    <span>Link Gir</span>
                   </button>
                 </div>
-              )}
-            </div>
 
-            {/* Yarış Numarası, Garaj ve Garaj Kayıt Tarihi */}
-            <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div>
-                <label className="block text-gray-300 font-bold mb-1">
-                  Yarış Numarası (#)
-                </label>
-                <input
-                  type="text"
-                  placeholder="örn: 46, 54, 99"
-                  value={formData.raceNumber}
-                  onChange={(e) => setFormData({ ...formData, raceNumber: e.target.value })}
-                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-black text-sm text-center focus:border-red-500 focus:outline-none"
-                  required
-                />
+                {showUrlInput && (
+                  <div className="w-full flex items-center space-x-1 mt-1">
+                    <input
+                      type="url"
+                      placeholder="https://..."
+                      value={customPhotoUrl}
+                      onChange={(e) => setCustomPhotoUrl(e.target.value)}
+                      className="w-full bg-black border border-gray-700 rounded-lg px-2 py-1 text-[10px] text-white"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleApplyPhotoUrl}
+                      className="px-2 py-1 rounded-lg bg-cyan-600 text-white font-bold text-[10px]"
+                    >
+                      Uygula
+                    </button>
+                  </div>
+                )}
               </div>
 
-              <div>
-                <label className="block text-gray-300 font-bold mb-1">
-                  Paddock Box Garajı
-                </label>
-                <select
-                  value={formData.garageId}
-                  onChange={(e) => setFormData({ ...formData, garageId: e.target.value })}
-                  className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
-                >
-                  {(garages || []).map((g) => (
-                    <option key={g.id} value={g.id}>
-                      {g.name}
-                    </option>
-                  ))}
-                </select>
+              {/* Yarış Numarası ve Garaj Seçimi */}
+              <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-gray-300 font-bold mb-1">
+                    Yarış Numarası (#)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="örn: 46, 54, 99"
+                    value={formData.raceNumber}
+                    onChange={(e) => setFormData({ ...formData, raceNumber: e.target.value })}
+                    className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-black text-sm text-center focus:border-red-500 focus:outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-gray-300 font-bold mb-1">
+                    Paddock Box Garajı
+                  </label>
+                  <select
+                    value={formData.garageId}
+                    onChange={(e) => setFormData({ ...formData, garageId: e.target.value })}
+                    className="w-full bg-black border-2 border-gray-700 rounded-xl px-3 py-2 text-white font-bold text-xs"
+                  >
+                    {(garages || []).map((g) => (
+                      <option key={g.id} value={g.id}>
+                        {g.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Kira Başlangıç Dönemi (Ay / Yıl) */}
-            <div className="w-full pt-2 border-t border-gray-800">
+            {/* Alt Kısım: Kira Başlangıç Dönemi (Ay / Yıl) - Tam Genişlik */}
+            <div className="w-full pt-3 border-t border-gray-800">
               <MonthYearPicker
-                label="Kira Başlangıç Dönemi (Ay / Yıl)"
+                label="Garaj Kira Başlangıç Dönemi (Ay / Yıl)"
                 value={formData.garageJoinDate}
                 onChange={(val) => setFormData({ 
                   ...formData, 
