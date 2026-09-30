@@ -271,13 +271,26 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
       const overdueMonths = currentIndex - nextDueIndex;
       statusLabel = `${overdueMonths} Ay Gecikmede`;
     } 
-    // Yalnızca cari ayın kirası ödenmemişse BU AY BEKLİYOR
+    // Yalnızca bu ayın kirası ödenmemişse
     else {
       status = 'PENDING';
       isPending = true;
-      statusLabel = `${formatPeriod(currentPeriod.year, currentPeriod.month)} Kirası Bekliyor`;
+      statusLabel = `Bu Ay Ödenmedi (${formatPeriod(currentPeriod.year, currentPeriod.month)})`;
     }
   }
+
+  // Ödenmiş dönemlerin listesi (Mükerrer tahsilatı engellemek için)
+  const paidPeriodCodes = [];
+  if (paidPeriodsCount > 0) {
+    for (let idx = startIndex; idx <= lastPaidIndex; idx++) {
+      const p = indexToPeriod(idx);
+      paidPeriodCodes.push(`${p.year}-${String(p.month).padStart(2, '0')}`);
+    }
+  }
+  rentPayments.forEach(p => {
+    if (p.startPeriod && !paidPeriodCodes.includes(p.startPeriod)) paidPeriodCodes.push(p.startPeriod);
+    if (p.periodCode && !paidPeriodCodes.includes(p.periodCode)) paidPeriodCodes.push(p.periodCode);
+  });
 
   const totalOverdueDebt = (status === 'OVERDUE' || status === 'PENDING')
     ? unpaidPeriods.reduce((acc, p) => acc + p.amount, 0)
@@ -289,6 +302,8 @@ export function getBikeRentInfo(bike, settings = DEFAULT_RENT_SETTINGS, referenc
     currentPeriod,
     currentPeriodLabel: formatPeriod(currentPeriod.year, currentPeriod.month),
     paidPeriodsCount,
+    lastPaidIndex,
+    paidPeriodCodes,
     totalRentPaid,
     rentPayments,
     monthlyRent: currentMonthlyRent,

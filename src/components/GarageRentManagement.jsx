@@ -56,20 +56,17 @@ export default function GarageRentManagement({
   });
 
   // Metrik Hesaplamaları
-  const overdueItems = bikesWithRent.filter(item => item.rentInfo.status === 'OVERDUE');
-  const pendingItems = bikesWithRent.filter(item => item.rentInfo.status === 'PENDING');
+  const unpaidItems = bikesWithRent.filter(item => item.rentInfo.status === 'OVERDUE' || item.rentInfo.status === 'PENDING');
   const paidItems = bikesWithRent.filter(item => item.rentInfo.status === 'PAID');
   const upcomingItems = bikesWithRent.filter(item => item.rentInfo.status === 'UPCOMING');
 
-  const totalOverdueDebt = overdueItems.reduce((acc, item) => acc + item.rentInfo.totalOverdueDebt, 0);
-  const totalPendingDebt = pendingItems.reduce((acc, item) => acc + item.rentInfo.totalOverdueDebt, 0);
+  const totalUnpaidDebt = unpaidItems.reduce((acc, item) => acc + item.rentInfo.totalOverdueDebt, 0);
   const totalPaidRevenue = bikesWithRent.reduce((acc, item) => acc + item.rentInfo.totalRentPaid, 0);
   const totalExpectedMonthly = bikesWithRent.reduce((acc, item) => acc + item.rentInfo.monthlyRent, 0);
 
   // Filtreleme
   let baseItems = bikesWithRent;
-  if (filter === 'OVERDUE') baseItems = overdueItems;
-  else if (filter === 'PENDING') baseItems = pendingItems;
+  if (filter === 'UNPAID' || filter === 'OVERDUE') baseItems = unpaidItems;
   else if (filter === 'PAID') baseItems = paidItems;
   else if (filter === 'UPCOMING') baseItems = upcomingItems;
 
@@ -131,11 +128,11 @@ export default function GarageRentManagement({
       {/* 1. ÜST İSTATİSTİK & AYAR KARTLARI (4 KUTU) */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         
-        {/* Kırmızı: Geciken / Ödeme Bekleyen Kiralar */}
+        {/* Kırmızı: Ödeme Bekleyen Kiralar */}
         <div 
-          onClick={() => setFilter('OVERDUE')}
+          onClick={() => setFilter('UNPAID')}
           className={`cursor-pointer p-4 sm:p-5 rounded-3xl border-2 transition shadow-xl ${
-            filter === 'OVERDUE'
+            filter === 'UNPAID'
               ? 'bg-red-950/70 border-red-500 shadow-red-950/50 scale-[1.01]'
               : 'bg-[#151922] border-gray-800 hover:border-gray-700'
           }`}
@@ -143,17 +140,17 @@ export default function GarageRentManagement({
           <div className="flex items-center justify-between text-red-400 font-black text-xs uppercase mb-1">
             <span className="flex items-center">
               <AlertTriangle className="w-4 h-4 mr-1 text-red-500 animate-pulse" />
-              Geciken Kiralar
+              Ödeme Bekleyenler
             </span>
             <span className="px-2.5 py-0.5 rounded-full bg-red-600 text-white text-[10px] font-black">
-              {overdueItems.length} Motor
+              {unpaidItems.length} Motor
             </span>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-red-400 mt-1">
-            {totalOverdueDebt.toLocaleString('tr-TR')} ₺
+            {totalUnpaidDebt.toLocaleString('tr-TR')} ₺
           </div>
           <div className="text-[11px] text-red-300/80 font-medium mt-1 truncate">
-            {overdueItems.length > 0 ? `${overdueItems.length} motorun vadesi geçti` : 'Geciken kira borcu yok'}
+            {unpaidItems.length > 0 ? `${unpaidItems.length} motorun ödenmemiş kirası var` : 'Ödenmemiş kira borcu yok'}
           </div>
         </div>
 
@@ -179,7 +176,7 @@ export default function GarageRentManagement({
             {paidItems.length} Pilot
           </div>
           <div className="text-[11px] text-emerald-300/80 font-medium mt-1 truncate">
-            Vadesi henüz gelmemiş / güncel
+            Kirasını ödemiş güncel araçlar
           </div>
         </div>
 
@@ -205,7 +202,7 @@ export default function GarageRentManagement({
             {totalExpectedMonthly.toLocaleString('tr-TR')} ₺
           </div>
           <div className="text-[11px] text-cyan-300/80 font-medium mt-1 truncate">
-            {pendingItems.length} cari bekleyen {upcomingItems.length > 0 ? `• ${upcomingItems.length} gelecek` : ''}
+            {unpaidItems.length > 0 ? `${unpaidItems.length} ödeme bekliyor` : 'Tüm kiralar güncel'}
           </div>
         </div>
 
@@ -280,27 +277,15 @@ export default function GarageRentManagement({
             </button>
 
             <button
-              onClick={() => setFilter('OVERDUE')}
+              onClick={() => setFilter('UNPAID')}
               className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
-                filter === 'OVERDUE'
+                filter === 'UNPAID' || filter === 'OVERDUE'
                   ? 'bg-red-600 text-white shadow-lg'
                   : 'bg-gray-800 text-red-400 hover:bg-gray-700'
               }`}
             >
               <AlertTriangle className="w-3.5 h-3.5 mr-1" />
-              <span>Gecikenler ({overdueItems.length})</span>
-            </button>
-
-            <button
-              onClick={() => setFilter('PENDING')}
-              className={`px-3 py-2 rounded-xl text-xs font-black transition flex items-center justify-center space-x-1 shrink-0 ${
-                filter === 'PENDING'
-                  ? 'bg-amber-600 text-white shadow-lg'
-                  : 'bg-gray-800 text-amber-400 hover:bg-gray-700'
-              }`}
-            >
-              <Clock className="w-3.5 h-3.5 mr-1" />
-              <span>Cari Bekleyen ({pendingItems.length})</span>
+              <span>Ödeme Bekleyenler ({unpaidItems.length})</span>
             </button>
 
             <button
@@ -325,7 +310,7 @@ export default function GarageRentManagement({
                 }`}
               >
                 <Sparkles className="w-3.5 h-3.5 mr-1" />
-                <span>Gelecek ({upcomingItems.length})</span>
+                <span>Gelecek Başlangıç ({upcomingItems.length})</span>
               </button>
             )}
           </div>
@@ -335,14 +320,12 @@ export default function GarageRentManagement({
         {/* Sonuç Özeti */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs text-gray-400 px-1 pt-1 border-t border-gray-800/80">
           <span>
-            {filter === 'OVERDUE'
-              ? '⚠️ Geçmiş aylara ait gecikmiş kirası olan araçlar listeleniyor'
-              : filter === 'PENDING'
-              ? '🕒 Yalnızca bu ayın (cari dönem) kira tahsilatı bekleyen araçlar listeleniyor'
+            {filter === 'UNPAID' || filter === 'OVERDUE'
+              ? '⚠️ Kirasını henüz ödememiş olan araçlar listeleniyor'
               : filter === 'PAID'
-              ? '✅ Kirası bu aya kadar (veya peşin) ödenmiş güncel araçlar listeleniyor'
+              ? '✅ Kirası ödenmiş güncel araçlar listeleniyor'
               : filter === 'UPCOMING'
-              ? '✨ Kira başlangıç tarihi henüz gelmemiş ileri tarihli araçlar listeleniyor'
+              ? '✨ Kira başlangıç dönemi henüz gelmemiş araçlar listeleniyor'
               : '🏢 Tüm kayıtlı garaj motorları listeleniyor'}
             {searchTerm && ` • "${searchTerm}" için ${displayedItems.length} sonuç bulundu`}
           </span>
@@ -453,7 +436,7 @@ export default function GarageRentManagement({
                         {rentInfo.statusLabel}
                       </span>
                       <div className="text-[11px] text-amber-300 font-bold">
-                        Cari Tutar: {rentInfo.totalOverdueDebt.toLocaleString('tr-TR')} ₺
+                        Ödenecek Tutar: {rentInfo.totalOverdueDebt.toLocaleString('tr-TR')} ₺
                       </div>
                     </div>
                   ) : (
