@@ -855,23 +855,23 @@ export default function BikeDetailModal({
               )}
 
               {/* Kira Başlangıç Dönemi */}
-              <div className="p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2.5 rounded-2xl bg-purple-900/40 border border-purple-700/50 text-purple-300">
+              <div className="p-3.5 sm:p-4 rounded-3xl bg-purple-950/20 border-2 border-purple-900/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center space-x-3 min-w-0">
+                  <div className="p-2.5 rounded-2xl bg-purple-900/40 border border-purple-700/50 text-purple-300 shrink-0">
                     <Building2 className="w-5 h-5" />
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <span className="text-xs font-black text-purple-300 uppercase tracking-wider block">
                       Kira Başlangıç Dönemi
                     </span>
-                    <span className="text-[11px] text-gray-400">
+                    <span className="text-[11px] text-gray-400 block leading-tight">
                       Üyelik başlangıcı • Kira hesabı bu dönemden saymaya başlar
                     </span>
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="px-3.5 py-1.5 rounded-xl bg-purple-900/60 border border-purple-600/50 text-white font-black text-xs sm:text-sm">
+                <div className="self-end sm:self-auto shrink-0">
+                  <span className="inline-flex items-center px-3.5 py-1.5 rounded-xl bg-purple-900/60 border border-purple-600/50 text-white font-black text-xs sm:text-sm whitespace-nowrap shadow-sm">
                     {(() => {
                       const p = parsePeriod(bike.garageStartPeriod || bike.garageJoinDate || '2026-01-15');
                       return formatPeriod(p.year, p.month);

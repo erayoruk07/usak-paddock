@@ -46,7 +46,7 @@ export default function RentHistoryModal({
         </div>
 
         {/* 3 Özet Kutusu */}
-        <div className="grid grid-cols-3 gap-2 sm:gap-3 p-3 sm:p-4 bg-black/40 border-b border-gray-800 shrink-0 text-center">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-3 p-2.5 sm:p-4 bg-black/40 border-b border-gray-800 shrink-0 text-center">
           <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gray-900/90 border border-gray-800">
             <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase block">Aylık Kira</span>
             <span className="text-xs sm:text-lg font-black text-purple-400 font-mono">
@@ -63,10 +63,10 @@ export default function RentHistoryModal({
 
           <div className="p-2 sm:p-2.5 rounded-xl sm:rounded-2xl bg-gray-900/90 border border-gray-800">
             <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase block">Kira Durumu</span>
-            <span className={`text-[11px] sm:text-sm font-black block mt-0.5 truncate ${
+            <span className={`text-[10px] sm:text-sm font-black block mt-0.5 truncate ${
               rentInfo.status === 'PAID' ? 'text-emerald-400' : rentInfo.status === 'OVERDUE' ? 'text-red-400' : rentInfo.status === 'UPCOMING' ? 'text-purple-400' : 'text-amber-400'
             }`}>
-              {rentInfo.status === 'PAID' ? '✅ Güncel' : rentInfo.status === 'OVERDUE' ? `⚠️ ${rentInfo.statusLabel}` : rentInfo.status === 'UPCOMING' ? '✨ Başlangıç Bekliyor' : '🕒 Cari Ay Bekliyor'}
+              {rentInfo.status === 'PAID' ? '✅ Güncel' : rentInfo.status === 'OVERDUE' ? `⚠️ ${rentInfo.statusLabel}` : rentInfo.status === 'UPCOMING' ? '✨ Bekliyor' : '🕒 Cari Ay'}
             </span>
           </div>
         </div>
@@ -93,37 +93,37 @@ export default function RentHistoryModal({
               {payments.map((p, idx) => (
                 <div 
                   key={p.id || idx}
-                  className="p-3 rounded-2xl bg-gray-900/90 border border-gray-800 flex items-center justify-between hover:border-purple-500/50 transition"
+                  className="p-2.5 sm:p-3 rounded-2xl bg-gray-900/90 border border-gray-800 flex items-center justify-between hover:border-purple-500/50 transition gap-2.5"
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="w-9 h-9 rounded-xl bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center shrink-0">
+                  <div className="flex items-center space-x-2.5 sm:space-x-3 min-w-0 flex-1">
+                    <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-emerald-950 border border-emerald-700/80 text-emerald-400 flex items-center justify-center shrink-0">
                       <Receipt className="w-4 h-4" />
                     </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-black text-white">
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs sm:text-sm font-black text-white truncate">
                         {p.period || 'Garaj Kirası'}
                       </div>
-                      <div className="text-[11px] text-gray-400 flex items-center space-x-2 mt-0.5">
-                        <span className="flex items-center">
+                      <div className="text-[10px] sm:text-[11px] text-gray-400 flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span className="flex items-center whitespace-nowrap">
                           <Clock className="w-3 h-3 mr-1 text-gray-500" />
                           {p.date}
                         </span>
                         <span>•</span>
-                        <span className="text-cyan-400 font-semibold">{p.method || 'Nakit'}</span>
+                        <span className="text-cyan-400 font-semibold whitespace-nowrap">{p.method || 'Nakit'}</span>
                       </div>
                       {p.note && (
-                        <div className="text-[10px] text-gray-500 italic mt-0.5">
+                        <div className="text-[10px] text-gray-500 italic mt-0.5 truncate">
                           {p.note}
                         </div>
                       )}
                     </div>
                   </div>
 
-                  <div className="text-right">
-                    <div className="text-sm sm:text-base font-black text-emerald-400 font-mono">
+                  <div className="text-right shrink-0 flex flex-col items-end justify-center">
+                    <div className="text-xs sm:text-base font-black text-emerald-400 font-mono whitespace-nowrap">
                       +{Number(p.amount || 0).toLocaleString('tr-TR')} ₺
                     </div>
-                    <span className="text-[9px] font-bold text-emerald-500 bg-emerald-950/80 px-2 py-0.5 rounded-full border border-emerald-800">
+                    <span className="inline-flex items-center whitespace-nowrap text-[9px] font-bold text-emerald-400 bg-emerald-950/90 px-2 py-0.5 rounded-full border border-emerald-800/80 mt-1">
                       Tahsil Edildi
                     </span>
                   </div>

@@ -221,20 +221,20 @@ export default function RentSummaryModal({
             {rentInfo.rentPayments && rentInfo.rentPayments.length > 0 ? (
               <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
                 {rentInfo.rentPayments.map((p, idx) => (
-                  <div key={p.id || idx} className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-white">
+                  <div key={p.id || idx} className="p-2.5 rounded-xl bg-gray-900 border border-gray-800 flex items-center justify-between gap-2.5">
+                    <div className="min-w-0 flex-1">
+                      <div className="font-bold text-white text-xs sm:text-sm truncate">
                         {p.period || 'Garaj Kirası'}
                       </div>
-                      <div className="text-[10px] text-gray-400 mt-0.5">
+                      <div className="text-[10px] text-gray-400 mt-0.5 truncate">
                         {p.date} • {p.method || 'Nakit'}
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="font-mono font-black text-emerald-400 text-xs sm:text-sm">
+                    <div className="text-right shrink-0 flex flex-col items-end justify-center">
+                      <div className="font-mono font-black text-emerald-400 text-xs sm:text-sm whitespace-nowrap">
                         +{Number(p.amount).toLocaleString('tr-TR')} ₺
                       </div>
-                      <span className="text-[9px] text-gray-500">
+                      <span className="text-[9px] text-gray-400 whitespace-nowrap inline-block mt-0.5">
                         {p.periodCount ? `${p.periodCount} Ay` : 'Tahsil Edildi'}
                       </span>
                     </div>
