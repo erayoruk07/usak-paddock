@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   X, 
   User, 
@@ -44,9 +44,15 @@ export default function BikeDetailModal({
   if (!bike) return null;
 
   const isViewer = currentUser?.role === 'VIEWER';
-  const [activeTab, setActiveTab] = useState('parts'); // 'parts', 'entries', 'owner', 'qr'
+  const [activeTab, setActiveTab] = useState(bike.initialTab || 'parts'); // 'parts', 'entries', 'owner', 'qr'
   const [newPartName, setNewPartName] = useState('');
   const [showAddPart, setShowAddPart] = useState(false);
+
+  useEffect(() => {
+    if (bike?.initialTab) {
+      setActiveTab(bike.initialTab);
+    }
+  }, [bike?.initialTab, bike?.id]);
 
   // Araç & Ruhsat Bilgilerini Düzenleme State'i
   const [isEditingVehicle, setIsEditingVehicle] = useState(false);

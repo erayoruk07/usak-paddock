@@ -466,6 +466,82 @@ export async function clearAllTestBikes(currentUsername = 'Admin') {
   return [];
 }
 
+/**
+ * Tüm test garaj kirası tahsilat kayıtlarını sıfırlar.
+ * Motorlar, parçalar ve pist giriş hakları korunur; yalnızca kira ödeme geçmişi temizlenir.
+ */
+export async function clearAllGarageRentPayments(currentUsername = 'Admin') {
+  let bikesToClean = [];
+  
+  // 1. Supabase'den veya yerelden güncel motorları al
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data, error } = await supabase.from('bikes').select('*');
+      if (!error && data) {
+        bikesToClean = data.map(dbToBike);
+      }
+    } catch (err) {
+      console.warn('[DB clearAllGarageRentPayments] Supabase listeleme hatası:', err);
+    }
+  }
+
+  if (bikesToClean.length === 0) {
+    bikesToClean = loadBikes();
+  }
+
+  // 2. Her motorun geçmişindeki RENT_PAYMENT kayıtlarını ayıkla
+  const updatedBikes = bikesToClean.map(bike => {
+    const rawHistory = Array.isArray(bike.entryHistory) ? bike.entryHistory : [];
+    const cleanedHistory = rawHistory.filter(h => {
+      const type = h?.type || '';
+      const note = (h?.note || '').toLowerCase();
+      if (type === 'RENT_PAYMENT' || type === 'GARAGE_RENT') return false;
+      if (note.includes('garaj kirası') || note.includes('kira tahsilat') || note.includes('kira ödendi')) return false;
+      return true;
+    });
+
+    return {
+      ...bike,
+      entryHistory: cleanedHistory
+    };
+  });
+
+  // 3. Supabase'deki motorları güncelle
+  if (isSupabaseConfigured && supabase) {
+    for (const bike of updatedBikes) {
+      try {
+        const row = bikeToDb(bike);
+        await supabase.from('bikes').update({
+          entry_history: row.entry_history
+        }).eq('id', bike.id);
+      } catch (err) {
+        console.error(`[DB clearAllGarageRentPayments] Motor ${bike.id} güncellenemedi:`, err);
+      }
+    }
+
+    // Kira loglarını entry_logs tablosundan temizle
+    try {
+      await supabase.from('entry_logs')
+        .delete()
+        .or('action_type.eq.RENT_PAYMENT,action_type.eq.GARAGE_RENT,note.ilike.%kira%');
+    } catch (err) {
+      console.warn('[DB clearAllGarageRentPayments] Log silme uyarısı:', err);
+    }
+  }
+
+  // 4. Yerel önbelleğe de kaydet
+  saveBikes(updatedBikes);
+
+  // 5. İşlem logunu kaydet
+  await logAction({
+    actionType: 'GARAGE_RENTS_CLEARED',
+    note: 'Tüm test garaj kira tahsilatları sıfırlandı. Motorlar ve pist hakları korundu.',
+    performedBy: currentUsername
+  });
+
+  return updatedBikes;
+}
+
 // ============================================================
 // 6. PİST İŞLEM VE GİRİŞ LOGLARI (ENTRY & AUDIT LOGS)
 // ============================================================

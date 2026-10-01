@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   X, 
   CreditCard, 
@@ -124,9 +125,9 @@ export default function RentPaymentModal({
     onSavePayment(bike, newPaymentRecord);
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-lg bg-[#141822] border-2 border-purple-500/70 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-lg bg-[#141822] border-2 border-purple-500/70 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[88dvh] sm:max-h-[90vh] flex flex-col">
         
         {/* Üst Başlık */}
         <div className="p-3.5 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
@@ -157,20 +158,20 @@ export default function RentPaymentModal({
 
         {/* Form İçeriği */}
         <form onSubmit={handleSubmit} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="p-3.5 sm:p-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+          <div className="p-3 sm:p-5 space-y-3.5 sm:space-y-4 overflow-y-auto flex-1 min-h-0">
           
             {/* 1. ÖDENECEK KİRA DÖNEMİ: YIL SEÇİCİ & 12 AY TAKVİMİ */}
-            <div className="p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/40 space-y-3">
+            <div className="p-3 sm:p-3.5 rounded-2xl bg-purple-950/20 border border-purple-500/40 space-y-2.5 sm:space-y-3">
               
               {/* Yıl Seçim Çubuğu */}
-              <div className="flex items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center justify-between gap-1.5">
                 <span className="text-xs font-black text-purple-300 uppercase tracking-wider flex items-center shrink-0">
                   <Calendar className="w-3.5 h-3.5 mr-1.5 text-purple-400" />
                   Ödenen Dönem
                 </span>
 
                 {/* Yıl Değiştirme Butonları (Hızlı Yıl Seçimi) */}
-                <div className="flex items-center space-x-1 bg-black/80 p-1 rounded-xl border border-purple-500/30">
+                <div className="flex items-center space-x-0.5 sm:space-x-1 bg-black/80 p-0.5 sm:p-1 rounded-xl border border-purple-500/30">
                   <button
                     type="button"
                     onClick={() => setSelectedYear(prev => prev - 1)}
@@ -186,7 +187,7 @@ export default function RentPaymentModal({
                       type="button"
                       key={y}
                       onClick={() => setSelectedYear(y)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-black transition ${
+                      className={`px-2 sm:px-2.5 py-1 rounded-lg text-[11px] sm:text-xs font-black transition ${
                         selectedYear === y
                           ? 'bg-purple-600 text-white shadow-md'
                           : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
@@ -267,7 +268,7 @@ export default function RentPaymentModal({
                       </div>
 
                       {/* Durum Rozeti ve Dönem Fiyatı */}
-                      <div className="flex items-center justify-between text-[9px] mt-1 gap-1">
+                      <div className="flex flex-col xs:flex-row sm:flex-row items-start xs:items-center justify-between text-[9px] mt-1 gap-0.5 sm:gap-1 leading-tight">
                         <span className={`font-bold truncate ${
                           isSelected && !isPaid
                             ? isBeforeStart ? 'text-gray-300' : 'text-purple-200'
@@ -477,6 +478,7 @@ export default function RentPaymentModal({
         </form>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

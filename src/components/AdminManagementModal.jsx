@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { X, Users, UserPlus, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, User, Shield, Eye } from 'lucide-react';
+import { X, Users, UserPlus, Trash2, CheckCircle2, AlertTriangle, ShieldCheck, User, Shield, Eye, Building2 } from 'lucide-react';
 import { formatTitleCaseTurkish } from '../data/mockData';
 
-export default function AdminManagementModal({ admins, currentUser, dbStatus, onClose, onAddAdmin, onDeleteAdmin, onClearAllTestBikes }) {
+export default function AdminManagementModal({ admins, currentUser, dbStatus, onClose, onAddAdmin, onDeleteAdmin, onClearAllTestBikes, onClearAllGarageRents }) {
   const [newUsername, setNewUsername] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [newName, setNewName] = useState('');
@@ -247,7 +247,31 @@ export default function AdminManagementModal({ admins, currentUser, dbStatus, on
             </div>
           </div>
 
-          {/* 3. GERÇEK VERİYE GEÇİŞ & TEST VERİLERİNİ TEMİZLEME */}
+          {/* 3. TEST GARAJ KİRALARINI TEMİZLEME */}
+          {currentUser?.role === 'ADMIN' && onClearAllGarageRents && (
+            <div className="p-4 bg-purple-950/20 border border-purple-900/60 rounded-2xl space-y-2">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-black text-purple-400 uppercase tracking-wider flex items-center">
+                    <Building2 className="w-4 h-4 mr-1.5" />
+                    Test Garaj Kiralarını Sıfırla
+                  </h4>
+                  <p className="text-[11px] text-gray-400 mt-0.5">
+                    Mevcut motosikletlerinizi, parçalarını ve pist haklarını silmeden yalnızca test amaçlı girilen tüm garaj kira tahsilat ve ödeme kayıtlarını sıfırlar.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={onClearAllGarageRents}
+                  className="px-4 py-2.5 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-black text-xs uppercase tracking-wider shrink-0 transition shadow-lg shadow-purple-900/40"
+                >
+                  Kira Kayıtlarını Sıfırla
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* 4. GERÇEK VERİYE GEÇİŞ & TÜM TEST VERİLERİNİ TEMİZLEME */}
           {currentUser?.role === 'ADMIN' && onClearAllTestBikes && (
             <div className="p-4 bg-red-950/20 border border-red-900/60 rounded-2xl space-y-2">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">

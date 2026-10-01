@@ -1,4 +1,5 @@
 import React from 'react';
+import { createPortal } from 'react-dom';
 import { X, Receipt, Building2, Calendar, Banknote, CreditCard, Clock, CheckCircle2 } from 'lucide-react';
 
 export default function RentHistoryModal({ 
@@ -11,9 +12,9 @@ export default function RentHistoryModal({
 
   const payments = rentInfo.rentPayments || [];
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
-      <div className="relative w-full max-w-2xl bg-[#141822] border-2 border-purple-500/60 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-2xl bg-[#141822] border-2 border-purple-500/60 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden my-auto max-h-[88dvh] sm:max-h-[90vh] flex flex-col">
         
         {/* Üst Başlık */}
         <div className="p-3.5 sm:p-5 bg-gradient-to-r from-purple-950 via-gray-900 to-black border-b border-purple-500/30 flex items-center justify-between shrink-0">
@@ -151,6 +152,7 @@ export default function RentHistoryModal({
         </div>
 
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

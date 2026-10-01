@@ -63,7 +63,7 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
     garageId: defaultGarageId || 'box-1',
     garageJoinDate: new Date().toISOString().split('T')[0],
     brand: 'Yamaha',
-    model: 'YZF-R6',
+    model: 'YZF-R25',
     year: 2024,
     engineSize: '',
     chassisNumber: '',
@@ -374,10 +374,13 @@ export default function AddBikeModal({ onClose, onAddBike, garages, defaultGarag
                   onChange={(e) => {
                     const b = e.target.value;
                     const models = TURKEY_MOTORCYCLE_DATABASE[b] || [];
+                    const defaultModel = (b === 'Yamaha' && models.includes('YZF-R25'))
+                      ? 'YZF-R25'
+                      : (models.length > 0 ? models[0] : '');
                     setFormData({ 
                       ...formData, 
                       brand: b, 
-                      model: models.length > 0 ? models[0] : '' 
+                      model: defaultModel 
                     });
                     setIsCustomModel(false);
                   }}

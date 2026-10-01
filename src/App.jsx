@@ -33,6 +33,7 @@ import {
   updateBike,
   deleteBike,
   clearAllTestBikes,
+  clearAllGarageRentPayments,
   fetchRentSettingsFromDb
 } from './services/dbService';
 
@@ -340,6 +341,19 @@ export default function App() {
     }
   };
 
+  // Test Garaj Kira Verilerini Sıfırlama (Canlı DB & Yerel)
+  const handleClearAllGarageRentPayments = async () => {
+    if (window.confirm("⚠️ DİKKAT: Sistemdeki tüm test garaj kirası tahsilat kayıtları ve ödeme geçmişi temizlenecektir.\n\nMevcut motorlarınız, parçalarınız ve pist giriş haklarınız korunacaktır.\n\nGaraj kiralarını sıfırdan test etmek için onaylıyor musunuz?")) {
+      const updated = await clearAllGarageRentPayments(currentUser?.name || currentUser?.username || 'Admin');
+      setBikes(updated);
+      alert("✅ Tüm test garaj kiraları başarıyla temizlendi! Kira takip ekranı sıfırlandı.");
+    }
+  };
+
+  useEffect(() => {
+    window.clearAllGarageRentPayments = handleClearAllGarageRentPayments;
+  }, [bikes, currentUser]);
+
   // Piste Giriş Pop-up Onayı (1 veya birden fazla hak düşme)
   const handleConfirmTrackEntry = async (deductCount, note) => {
     if (!trackEntryBike) return;
@@ -507,7 +521,7 @@ export default function App() {
         />
 
         {/* Ana Gövde */}
-        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative z-10">
+        <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
         
         {/* TAB 1: 10 PADDOCK BOX (GARAJ KAPILARI) */}
         {activeTab === 'pitlane' && (
@@ -526,7 +540,10 @@ export default function App() {
                 currentUser={currentUser}
                 onBack={handleBackFromGarage}
                 onSelectBike={(b) => setSelectedBike(b)}
-                onShowQR={(b) => setSelectedBike({ ...b, initialTab: 'qr' })}
+                onShowQR={(b) => {
+                  setPrintBikeTarget(b);
+                  setActiveTab('print');
+                }}
                 onQuickWhatsApp={handleQuickWhatsApp}
                 onAddNewBikeToThisGarage={(g) => {
                   if (currentUser?.role === 'VIEWER') return;
@@ -581,7 +598,10 @@ export default function App() {
                   key={bike.id} 
                   bike={bike}
                   onSelect={(b) => setSelectedBike(b)}
-                  onShowQR={(b) => setSelectedBike({ ...b, initialTab: 'qr' })}
+                  onShowQR={(b) => {
+                    setPrintBikeTarget(b);
+                    setActiveTab('print');
+                  }}
                   onQuickWhatsApp={handleQuickWhatsApp}
                 />
               ))}
@@ -771,6 +791,7 @@ export default function App() {
           onAddAdmin={handleAddAdmin}
           onDeleteAdmin={handleDeleteAdmin}
           onClearAllTestBikes={handleClearAllTestBikes}
+          onClearAllGarageRents={handleClearAllGarageRentPayments}
         />
       )}
 
