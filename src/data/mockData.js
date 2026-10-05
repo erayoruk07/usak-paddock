@@ -161,7 +161,10 @@ export function loadBikes() {
       localStorage.removeItem("usak_pist_garage_bikes_v2");
     }
     const saved = localStorage.getItem(STORAGE_KEY_BIKES);
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return Array.isArray(parsed) ? parsed.filter(b => !b.isDeleted) : INITIAL_BIKES;
+    }
   } catch (e) {
     console.error("Failed to load bikes", e);
   }

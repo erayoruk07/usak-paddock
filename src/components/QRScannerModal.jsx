@@ -7,13 +7,18 @@ import {
   CheckCircle2, 
   AlertCircle, 
   ScanLine,
-  Info
+  Info,
+  ChevronDown,
+  ChevronUp,
+  Smartphone,
+  ShieldCheck
 } from 'lucide-react';
 
 export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
   const [scanResult, setScanResult] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
+  const [showPermGuide, setShowPermGuide] = useState(false);
   const html5QrCodeRef = useRef(null);
 
   // Sesli Bip Çalma (Web Audio API)
@@ -69,9 +74,20 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
         aspectRatio: 1.0
       };
 
-      // Doğrudan arka kamera ID'sini bularak başlat (Tarayıcının sürekli izin promptu çıkarmasını engeller)
-      let cameraConfig = { facingMode: 'environment' };
+      // 1. Önce doğrudan facingMode: 'environment' ile tek seferde başlat (çift getUserMedia tetiklemez)
       try {
+        await scanner.start(
+          { facingMode: 'environment' },
+          config,
+          (decodedText) => {
+            handleScanSuccess(decodedText);
+          },
+          () => {}
+        );
+        setIsScanning(true);
+      } catch (firstErr) {
+        console.warn('Direct facingMode start failed, trying deviceId fallback:', firstErr);
+        // Fallback: Eğer facingMode desteklenmiyorsa getCameras ile dene
         const cameras = await Html5Qrcode.getCameras();
         if (cameras && cameras.length > 0) {
           const backCam = cameras.find(c => 
@@ -81,27 +97,22 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
             c.label.toLowerCase().includes('arka')
           ) || cameras[cameras.length - 1];
 
-          if (backCam && backCam.id) {
-            cameraConfig = backCam.id;
-          }
+          await scanner.start(
+            backCam.id,
+            config,
+            (decodedText) => {
+              handleScanSuccess(decodedText);
+            },
+            () => {}
+          );
+          setIsScanning(true);
+        } else {
+          throw firstErr;
         }
-      } catch (e) {
-        console.warn('Cameras list error, fallback to facingMode:', e);
       }
-
-      await scanner.start(
-        cameraConfig,
-        config,
-        (decodedText) => {
-          handleScanSuccess(decodedText);
-        },
-        () => {}
-      );
-
-      setIsScanning(true);
     } catch (err) {
       console.warn('Camera start error:', err);
-      setErrorMsg('Kamera erişimi sağlanamadı. Lütfen tarayıcınızın kilit simgesinden kamera iznini "Her Zaman İzin Ver" olarak ayarlayınız.');
+      setErrorMsg('Kamera erişimi sağlanamadı. Lütfen tarayıcınızın kilit veya sayfa ayarlarından kamerayı "Her Zaman İzin Ver" olarak ayarlayınız.');
       setIsScanning(false);
     }
   };
@@ -228,10 +239,49 @@ export default function QRScannerModal({ bikes, onBikeFound, onClose }) {
               />
             </label>
 
-            {/* İzin Bilgilendirme Notu */}
-            <div className="flex items-center space-x-1.5 text-[11px] text-gray-400 text-center px-4">
-              <Info className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
-              <span>Sürekli izin sormaması için tarayıcınızın kilit simgesinden kamerayı <b>"Her Zaman İzin Ver"</b> yapabilirsiniz.</span>
+            {/* Kalıcı İzin Verme Rehberi (Her Zaman İzin Ver) */}
+            <div className="w-full pt-1">
+              <button
+                type="button"
+                onClick={() => setShowPermGuide(!showPermGuide)}
+                className="w-full p-2.5 rounded-2xl bg-cyan-950/40 border border-cyan-800/50 hover:border-cyan-500/70 text-cyan-300 text-xs font-bold flex items-center justify-between transition"
+              >
+                <div className="flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
+                  <span>Sürekli İzin Sormasını Engelle</span>
+                </div>
+                {showPermGuide ? <ChevronUp className="w-4 h-4 text-cyan-400" /> : <ChevronDown className="w-4 h-4 text-cyan-400" />}
+              </button>
+
+              {showPermGuide && (
+                <div className="mt-2 p-3 rounded-2xl bg-black/80 border border-gray-800 text-[11px] text-gray-300 space-y-2.5 animate-fade-in text-left">
+                  <div className="border-b border-gray-800 pb-2">
+                    <div className="font-black text-white text-xs flex items-center gap-1.5 mb-1">
+                      <span>🍎 iPhone / iPad (Safari):</span>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-400 pl-1">
+                      <li>Sol alt veya üstteki <b className="text-white">"aA"</b> butonuna dokunun.</li>
+                      <li><b className="text-white">"Web Sitesi Ayarları"</b> seçeneğini açın.</li>
+                      <li>Kamera ayarını "Sor" yerine <b className="text-cyan-400">"İzin Ver"</b> yapın.</li>
+                    </ol>
+                  </div>
+
+                  <div className="border-b border-gray-800 pb-2">
+                    <div className="font-black text-white text-xs flex items-center gap-1.5 mb-1">
+                      <span>🤖 Android (Google Chrome):</span>
+                    </div>
+                    <ol className="list-decimal list-inside space-y-1 text-gray-400 pl-1">
+                      <li>Adres çubuğundaki <b className="text-white">🔒 Kilit</b> simgesine dokunun.</li>
+                      <li><b className="text-white">"İzinler" &rarr; "Kamera"</b> bölümüne girin.</li>
+                      <li><b className="text-cyan-400">"Her zaman izin ver"</b> seçeneğini işaretleyin.</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-2 rounded-xl bg-purple-950/40 border border-purple-800/40 text-[10px] text-purple-200">
+                    💡 <b>En Pratik Çözüm:</b> Tarayıcı menüsünden <b>"Ana Ekrana Ekle"</b> yaparsanız uygulama gibi yüklenir ve izinleri kalıcı olarak saklar.
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

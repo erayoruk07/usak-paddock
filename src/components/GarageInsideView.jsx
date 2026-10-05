@@ -9,7 +9,8 @@ import {
   CheckCircle2, 
   ArrowRightLeft, 
   ChevronRight, 
-  Heart
+  Heart,
+  Trash2
 } from 'lucide-react';
 
 export default function GarageInsideView({ 
@@ -25,9 +26,11 @@ export default function GarageInsideView({
   onMoveBike,
   onUpdateBike,
   onOpenTrackEntry,
-  onOpenAddEntries
+  onOpenAddEntries,
+  onDeleteBike
 }) {
   const isViewer = currentUser?.role === 'VIEWER';
+  const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN' || currentUser?.username?.toLowerCase() === 'admin';
   const [transferringBike, setTransferringBike] = useState(null);
   const [targetGarageId, setTargetGarageId] = useState('');
 
@@ -204,6 +207,19 @@ export default function GarageInsideView({
                     <span>Motor Detayı</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
+
+                  {isAdmin && onDeleteBike && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteBike(bike.id);
+                      }}
+                      className="p-3 rounded-xl bg-red-950/50 hover:bg-red-900 border border-red-800/80 hover:border-red-600 text-red-400 hover:text-white transition shrink-0"
+                      title="Motoru Garajdan Sil (DB verileri güvenle saklanır)"
+                    >
+                      <Trash2 className="w-5 h-5" />
+                    </button>
+                  )}
                 </div>
 
               </div>

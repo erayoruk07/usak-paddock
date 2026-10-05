@@ -39,11 +39,13 @@ export default function BikeDetailModal({
   onUpdateBike, 
   onOpenPrint,
   onOpenTrackEntry,
-  onOpenAddEntries 
+  onOpenAddEntries,
+  onDeleteBike
 }) {
   if (!bike) return null;
 
   const isViewer = currentUser?.role === 'VIEWER';
+  const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN' || currentUser?.username?.toLowerCase() === 'admin';
   const [activeTab, setActiveTab] = useState(bike.initialTab || 'parts'); // 'parts', 'entries', 'owner', 'qr'
   const [newPartName, setNewPartName] = useState('');
   const [showAddPart, setShowAddPart] = useState(false);
@@ -885,45 +887,30 @@ export default function BikeDetailModal({
           {/* 4. SEKME: KAREKOD */}
           {activeTab === 'qr' && (
             <div className="text-center space-y-4">
-              <div className="p-4 bg-white rounded-2xl max-w-xs mx-auto border-2 border-dashed border-black text-black shadow-lg">
-                <div className="flex items-center justify-between text-[9px] font-mono font-bold text-gray-500 pb-1.5 border-b border-dashed border-gray-300">
-                  <span>✂️ KESİM ÇİZGİSİ</span>
-                  <span className="font-black text-red-600 uppercase tracking-wider">UŞAK PADDOCK</span>
+              <div className="p-5 bg-white rounded-3xl max-w-xs mx-auto border-2 border-dashed border-black text-black shadow-lg flex flex-col items-center">
+                {/* Garaj Adı (Ortalanmış) */}
+                <div className="w-full text-center pb-2">
+                  <h3 className="text-base font-black uppercase text-black tracking-wider">
+                    {bike.garageNo || 'PADDOCK BOX'}
+                  </h3>
                 </div>
 
-                <div className="flex items-center justify-between pt-2 pb-1 text-left">
-                  <div>
-                    <div className="text-[11px] font-black tracking-widest text-red-600 uppercase leading-none">
-                      UŞAK YARIŞ PİSTİ
-                    </div>
-                    <div className="text-sm font-black uppercase text-black tracking-tight mt-0.5">
-                      {bike.garageNo}
-                    </div>
-                  </div>
-                  <span className="px-2.5 py-1 rounded-lg bg-black text-white font-black text-base italic shadow-sm">
-                    #{bike.raceNumber}
-                  </span>
-                </div>
-
-                <div className="flex flex-col items-center justify-center py-2">
-                  <div className="p-2.5 bg-white border-2 border-black rounded-xl">
+                {/* QR Kod (%20 Büyütülmüş - 180px ve Yuvarlatılmış Çerçeve) */}
+                <div className="py-2 flex flex-col items-center justify-center">
+                  <div className="p-3 bg-white border-2 border-black rounded-3xl shadow-sm">
                     <QRCodeSVG 
                       value={`USAK_TRACK_BIKE:${bike.id}`}
-                      size={150}
+                      size={180}
                       level="H"
+                      includeMargin={false}
                     />
                   </div>
-                  <span className="text-xs font-mono font-black text-black mt-1.5 tracking-wider">
-                    ID: {bike.id}
-                  </span>
                 </div>
 
-                <div className="border-t-2 border-black pt-2 flex items-center justify-between">
-                  <span className="text-[10px] font-mono font-bold text-gray-600 uppercase">
-                    BOX ETİKETİ
-                  </span>
-                  <span className="text-xs font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-0.5 rounded border border-red-200">
-                    PADDOCK KARTI
+                {/* ID (Ortalanmış) */}
+                <div className="w-full text-center pt-2">
+                  <span className="text-xs font-mono font-black text-black tracking-widest">
+                    ID: {bike.id}
                   </span>
                 </div>
               </div>
@@ -943,11 +930,26 @@ export default function BikeDetailModal({
 
         </div>
 
-        {/* Modal Kapat */}
-        <div className="p-4 bg-gray-900 border-t-2 border-gray-700 flex justify-end">
+        {/* Modal Alt Çubuk: Silme Butonu (Sadece Admin) & Kapat */}
+        <div className="p-4 bg-gray-900 border-t-2 border-gray-700 flex items-center justify-between gap-3">
+          {isAdmin && onDeleteBike ? (
+            <button
+              onClick={() => {
+                onDeleteBike(bike.id);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-800 border border-red-700/60 hover:border-red-600 text-red-300 hover:text-white font-black text-xs sm:text-sm flex items-center space-x-1.5 transition shadow"
+              title="Bu motoru garajdan kaldırır (DB verileri güvenle korunur)"
+            >
+              <Trash2 className="w-4 h-4" />
+              <span>Motoru Sil</span>
+            </button>
+          ) : (
+            <div />
+          )}
+
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-sm"
+            className="px-6 py-2.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-white font-bold text-sm transition"
           >
             Kapat
           </button>

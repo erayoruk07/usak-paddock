@@ -12,8 +12,8 @@ import { INITIAL_GARAGES, INITIAL_BIKES, loadGarages, saveGarages, loadBikes, sa
 export function bikeToDb(b) {
   // Kira ve üyelik ayarlarını JSONB entry_history dizisi içinde RENT_CONFIG olarak güvenle saklayalım
   let entryHistory = Array.isArray(b.entryHistory) ? [...b.entryHistory] : [];
-  // Eski RENT_CONFIG varsa temizleyelim
-  entryHistory = entryHistory.filter(item => item?.type !== 'RENT_CONFIG');
+  // Eski RENT_CONFIG ve STATUS_CONFIG varsa temizleyelim
+  entryHistory = entryHistory.filter(item => item?.type !== 'RENT_CONFIG' && item?.type !== 'STATUS_CONFIG');
   
   const startPeriod = b.garageStartPeriod || (b.garageJoinDate ? b.garageJoinDate.substring(0, 7) : null);
   const joinDate = b.garageJoinDate || (startPeriod ? `${startPeriod}-01` : null);
@@ -27,6 +27,15 @@ export function bikeToDb(b) {
     garageJoinDate: joinDate,
     customMonthlyRent: customRent
   });
+
+  if (b.isDeleted) {
+    entryHistory.push({
+      type: 'STATUS_CONFIG',
+      isDeleted: true,
+      deletedAt: b.deletedAt || new Date().toISOString(),
+      deletedBy: b.deletedBy || 'Admin'
+    });
+  }
 
   return {
     id: b.id,
@@ -68,8 +77,13 @@ export function bikeFromDb(row) {
   }
 
   const rentConfig = Array.isArray(rawHistory) ? rawHistory.find(item => item?.type === 'RENT_CONFIG') : null;
-  // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kaydını filtreleyelim
-  const cleanEntryHistory = Array.isArray(rawHistory) ? rawHistory.filter(item => item?.type !== 'RENT_CONFIG') : [];
+  const statusConfig = Array.isArray(rawHistory) ? rawHistory.find(item => item?.type === 'STATUS_CONFIG') : null;
+  const isDeleted = Boolean(statusConfig?.isDeleted || row.is_deleted || row.isDeleted);
+
+  // Kullanıcı arayüzünde görünmesi gerekmeyen sistem yapılandırma kayıtlarını filtreleyelim
+  const cleanEntryHistory = Array.isArray(rawHistory) 
+    ? rawHistory.filter(item => item?.type !== 'RENT_CONFIG' && item?.type !== 'STATUS_CONFIG') 
+    : [];
 
   const todayStr = new Date().toISOString().split('T')[0];
   const garageJoinDate = rentConfig?.garageJoinDate 
@@ -118,7 +132,8 @@ export function bikeFromDb(row) {
     remainingEntries: row.remaining_entries,
     totalEntriesGranted: row.total_entries_granted,
     equippedParts: Array.isArray(row.equipped_parts) ? row.equipped_parts : [],
-    entryHistory: cleanEntryHistory
+    entryHistory: cleanEntryHistory,
+    isDeleted
   };
 }
 
@@ -325,8 +340,9 @@ export async function fetchBikes() {
 
       if (!error && data) {
         const mapped = data.map(bikeFromDb);
-        saveBikes(mapped);
-        return mapped;
+        const activeBikes = mapped.filter(b => !b.isDeleted);
+        saveBikes(activeBikes);
+        return activeBikes;
       }
     } catch (e) {
       console.warn('[DB fetchBikes] Motorlar yerelden okunuyor:', e.message);
@@ -415,10 +431,50 @@ export async function updateBike(bike, currentUsername = 'Admin', logInfo = null
 }
 
 export async function deleteBike(bikeId, currentUsername = 'Admin') {
+  // 1. Yerel önbelleği hemen güncelle: silinen motoru arayüz listesinden kaldır
+  try {
+    const currentBikes = loadBikes();
+    const nextBikes = currentBikes.filter(b => b.id !== bikeId);
+    saveBikes(nextBikes);
+  } catch (err) {
+    console.warn('[DB deleteBike] Yerel kayıt uyarısı:', err);
+  }
+
+  // 2. Supabase DB'de ASLA SATIRI SİLMİYORUZ (Soft Delete / Arşivleme)
+  // entry_history içine STATUS_CONFIG kaydı ekliyoruz ki tüm geçmiş, parçalar ve kayıtlar DB'de korunsun
   if (isSupabaseConfigured && supabase) {
     try {
-      const { error } = await supabase.from('bikes').delete().eq('id', bikeId);
-      if (error) console.error('[DB deleteBike] Hata:', error.message);
+      const { data, error } = await supabase.from('bikes').select('*').eq('id', bikeId).maybeSingle();
+      if (!error && data) {
+        let history = [];
+        if (Array.isArray(data.entry_history)) {
+          history = [...data.entry_history];
+        } else if (typeof data.entry_history === 'string' && data.entry_history.startsWith('[')) {
+          try { history = JSON.parse(data.entry_history); } catch {}
+        }
+
+        history = history.filter(h => h?.type !== 'STATUS_CONFIG');
+        history.push({
+          type: 'STATUS_CONFIG',
+          isDeleted: true,
+          deletedAt: new Date().toISOString(),
+          deletedBy: currentUsername
+        });
+
+        const { error: updateError } = await supabase
+          .from('bikes')
+          .update({
+            entry_history: history,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', bikeId);
+
+        if (updateError) {
+          console.error('[DB deleteBike] Soft delete update hatası:', updateError.message);
+        } else {
+          console.log('[DB deleteBike] Motor veritabanında güvenle arşivlendi (soft delete):', bikeId);
+        }
+      }
     } catch (e) {
       console.error('[DB deleteBike] Bağlantı hatası:', e);
     }
@@ -427,7 +483,7 @@ export async function deleteBike(bikeId, currentUsername = 'Admin') {
   await logAction({
     bikeId,
     actionType: 'BIKE_DELETED',
-    note: `Motor sistemden silindi: ${bikeId}`,
+    note: `Motor arayüzden kaldırıldı / arşivlendi (DB verileri korundu): ${bikeId}`,
     performedBy: currentUsername
   });
 }

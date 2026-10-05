@@ -297,8 +297,25 @@ export default function App() {
     await insertBike(newBike, currentUser?.name || currentUser?.username || 'Admin');
   };
 
-  // Motor Silme - Doğrudan Supabase DB'den Delete & Log
+  // Motor Silme - Sadece Yönetici (Admin), Onaylı ve DB'de Verileri Koruyarak (Soft Delete)
   const handleDeleteBike = async (bikeId) => {
+    const isAdmin = currentUser?.role?.toUpperCase() === 'ADMIN' || currentUser?.username?.toLowerCase() === 'admin';
+    if (!isAdmin) {
+      alert("⚠️ Motor silme işlemi sadece Yönetici (Admin) yetkisine sahip kullanıcılar tarafından yapılabilir.");
+      return;
+    }
+
+    const bike = bikes.find(b => b.id === bikeId);
+    const bikeTitle = bike ? `#${bike.raceNumber} ${bike.brand} ${bike.model} (${bike.owner?.fullName || 'Sahipsiz'})` : bikeId;
+
+    const confirmed = window.confirm(
+      `⚠️ ${bikeTitle} aracını silmek istediğinize emin misiniz?\n\n` +
+      `ℹ️ Not: Araç garaj ekranından ve listelerden kaldırılacaktır.\n` +
+      `Veritabanındaki geçmiş kayıtları, takılı parçaları ve işlem hareketleri ASLA SİLİNMEZ, sistemde güvenle saklanmaya devam eder.`
+    );
+
+    if (!confirmed) return;
+
     setBikes(prev => prev.filter(b => b.id !== bikeId));
     if (selectedBike?.id === bikeId) setSelectedBike(null);
     await deleteBike(bikeId, currentUser?.name || currentUser?.username || 'Admin');
@@ -554,6 +571,7 @@ export default function App() {
                 onUpdateBike={handleUpdateBike}
                 onOpenTrackEntry={(b) => setTrackEntryBike(b)}
                 onOpenAddEntries={(b) => setAddEntriesBike(b)}
+                onDeleteBike={handleDeleteBike}
               />
             )}
           </div>
@@ -749,6 +767,7 @@ export default function App() {
           }}
           onOpenTrackEntry={(bike) => setTrackEntryBike(bike)}
           onOpenAddEntries={(bike) => setAddEntriesBike(bike)}
+          onDeleteBike={handleDeleteBike}
         />
       )}
 

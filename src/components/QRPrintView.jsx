@@ -270,59 +270,32 @@ export default function QRPrintView({ bikes, selectedBike, onBack }) {
         {bikesToPrint.map((bike) => (
           <div 
             key={bike.id}
-            className="qr-sticker relative bg-white text-black p-4 rounded-2xl border-2 border-dashed border-black shadow-lg flex flex-col justify-between overflow-hidden"
+            className="qr-sticker relative bg-white text-black p-5 sm:p-6 rounded-3xl border-2 border-dashed border-black shadow-lg flex flex-col items-center justify-between overflow-hidden"
             style={{ minHeight: '300px' }}
           >
-            {/* Kesim Çizgisi Başlığı */}
-            <div className="flex items-center justify-between text-[9px] font-mono font-bold text-gray-500 pb-1.5 border-b border-dashed border-gray-300">
-              <span className="flex items-center space-x-1">
-                <span>✂️</span>
-                <span>KESİM ÇİZGİSİ</span>
-              </span>
-              <span className="tracking-widest uppercase text-red-600 font-black">
-                UŞAK PADDOCK
-              </span>
+            {/* Garaj Başlığı (Ortalanmış) */}
+            <div className="w-full text-center pt-1 pb-2">
+              <h2 className="text-base sm:text-lg font-black uppercase text-black tracking-wider">
+                {bike.garageNo || 'PADDOCK BOX'}
+              </h2>
             </div>
 
-            {/* Üst Şerit: UŞAK YARIŞ PİSTİ, Garaj ve Yarışçı Numarası */}
-            <div className="flex items-center justify-between pt-2 pb-1">
-              <div>
-                <div className="text-xs font-black tracking-widest text-red-600 uppercase leading-none">
-                  UŞAK YARIŞ PİSTİ
-                </div>
-                <div className="text-base font-black uppercase text-black tracking-tight mt-1">
-                  {bike.garageNo}
-                </div>
-              </div>
-              <div className="shrink-0">
-                <span className="px-3 py-1 rounded-lg bg-black text-white font-black text-lg italic tracking-wider shadow-sm">
-                  #{bike.raceNumber}
-                </span>
-              </div>
-            </div>
-
-            {/* QR Kod (Yüksek Çözünürlük ve Tekil ID) */}
-            <div className="py-2 flex flex-col items-center justify-center my-auto">
-              <div className="p-3 bg-white border-2 border-black rounded-2xl shadow-sm">
+            {/* QR Kod (%20 Büyütülmüş - 190px ve Yuvarlatılmış Çerçeve) */}
+            <div className="my-auto flex flex-col items-center justify-center">
+              <div className="p-3 sm:p-3.5 bg-white border-2 border-black rounded-3xl shadow-sm">
                 <QRCodeSVG 
                   value={`USAK_TRACK_BIKE:${bike.id}`}
-                  size={155}
+                  size={190}
                   level="H"
                   includeMargin={false}
                 />
               </div>
-              <span className="text-xs font-mono font-black text-black mt-2 tracking-widest">
-                ID: {bike.id}
-              </span>
             </div>
 
-            {/* Alt Kısım: Paddock Kartı */}
-            <div className="border-t-2 border-black pt-2 flex items-center justify-between">
-              <span className="text-[10px] font-mono font-bold text-gray-600 uppercase tracking-wider">
-                BOX ETİKETİ
-              </span>
-              <span className="text-xs font-black text-red-600 uppercase tracking-widest bg-red-50 px-2.5 py-1 rounded-md border border-red-200">
-                PADDOCK KARTI
+            {/* ID (Ortalanmış) */}
+            <div className="w-full text-center pt-2 pb-1">
+              <span className="text-xs sm:text-sm font-mono font-black text-black tracking-widest">
+                ID: {bike.id}
               </span>
             </div>
           </div>
