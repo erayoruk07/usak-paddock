@@ -741,11 +741,11 @@ export default function App() {
               </span>
             </div>
             <span className="text-gray-600">•</span>
-            <span>Uşak Yarış Pisti •</span>
+            <span>Uşak Track •</span>
           </div>
 
           <div className="text-center sm:text-right text-[11px] text-gray-400">
-            © {new Date().getFullYear()} Uşak Yarış Pisti • Designed & Developed by <span className="text-red-500 font-bold">Eray Yörük</span>
+            © {new Date().getFullYear()} Uşak Track • Designed & Developed by <span className="text-red-500 font-bold">Eray Yörük</span>
           </div>
         </footer>
 

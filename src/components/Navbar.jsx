@@ -32,17 +32,21 @@ export default function Navbar({
           
           {/* 1. Sol: Logo & Pist Başlığı */}
           <div 
-            className="flex items-center space-x-2.5 cursor-pointer select-none shrink-0" 
+            className="flex items-center space-x-2.5 sm:space-x-3 cursor-pointer select-none shrink-0" 
             onClick={() => setActiveTab('pitlane')}
           >
-            <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl sm:rounded-2xl overflow-hidden shadow-lg shadow-black/60 shrink-0 border border-white/15 bg-black">
-              <img src="/logo.png" alt="Uşak Paddock Logo" className="w-full h-full object-cover" />
+            <div className="h-10 sm:h-12 w-auto flex items-center justify-center shrink-0">
+              <img 
+                src="/logo.png" 
+                alt="Uşak Track Logo" 
+                className="h-9 sm:h-11 w-auto object-contain filter drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" 
+              />
             </div>
             <div>
               <span className="text-lg sm:text-xl font-black text-white tracking-wider uppercase block leading-tight">
-                UŞAK PİSTİ
+                UŞAK TRACK
               </span>
-              <span className="text-[10px] text-red-400 font-bold tracking-widest uppercase block leading-none">
+              <span className="text-[10px] text-red-500 font-black tracking-widest uppercase block leading-none">
                 PADDOCK BOX
               </span>
             </div>

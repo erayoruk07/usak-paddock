@@ -42,17 +42,17 @@ export default function LoginScreen({ onLogin, admins }) {
         
         {/* Logo ve Başlık */}
         <div className="text-center space-y-3">
-          <div className="w-24 h-24 sm:w-28 sm:h-28 mx-auto rounded-3xl overflow-hidden shadow-2xl shadow-red-950/50 border border-white/10 p-1 bg-black/40">
+          <div className="w-52 sm:w-64 h-24 sm:h-28 mx-auto flex items-center justify-center p-1">
             <img 
               src="/logo.png" 
-              alt="Uşak Yarış Pisti Paddock Logo" 
-              className="w-full h-full object-cover rounded-2xl" 
+              alt="Uşak Track Paddock Logo" 
+              className="w-full h-full object-contain filter drop-shadow-[0_8px_20px_rgba(0,0,0,0.85)]" 
             />
           </div>
 
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-wider uppercase">
-              UŞAK PİSTİ GARAJ
+              UŞAK TRACK GARAJ
             </h1>
             <p className="text-xs sm:text-sm text-gray-400 font-bold mt-0.5">
               Paddock Box Yönetim & Giriş Sistemi

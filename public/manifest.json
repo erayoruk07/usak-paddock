@@ -1,7 +1,7 @@
 {
-  "name": "Uşak Yarış Pisti • Paddock Garajı",
-  "short_name": "Uşak Paddock",
-  "description": "Uşak Yarış Pisti 10 Paddock Box Garaj ve Motor Donanım Takip Sistemi",
+  "name": "Uşak Track • Paddock Garajı",
+  "short_name": "Uşak Track",
+  "description": "Uşak Track 10 Paddock Box Garaj ve Motor Donanım Takip Sistemi",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
